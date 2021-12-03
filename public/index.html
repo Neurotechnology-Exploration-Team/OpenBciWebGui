@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Open BCI Web GUI</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <!--    <link rel="stylesheet" href="style.css">-->
+</head>
+<body>
+
+<div id="indicatorPanel"></div>
+
+</body>
+<style>
+
+.indicatorLight {
+    width: 20px;
+    height: 20px;
+    background-color: red;
+    border-radius: 50%;
+    margin: 12px;
+}
+
+.indicatorDiv {
+    border: 1px solid black;
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+#indicatorPanel div div {
+    display: inline-block;
+    padding: 0;
+}
+
+#indicatorPanel p  {
+    padding: 0;
+    margin: 0 12px 0 0;
+}
+
+</style>
+<script>
+
+    let socket = null;
+
+    let indicators = {
+        connectionStatus: {
+            status: 0,
+            options: [0, 1],
+            colors: ["red", "green"],
+            messages: ["Network Error", "Network Connected"]
+        }
+    }
+
+    function main() {
+        initializeIndicators();
+        updateIndicators(true);
+        attemptSocketConnect();
+    }
+
+    function attemptSocketConnect() {
+        socket = new WebSocket("ws://localhost:8080");
+
+        socket.onopen = function() {
+            // alert("[open] Connection established");
+            indicators.connectionStatus.status = 1;
+        };
+
+        socket.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+        };
+
+        socket.onclose = function(event) {
+            if (event.wasClean) {
+                // alert(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+                //window.location.reload();
+            } else {
+                // e.g. server process killed or network down
+                // event.code is usually 1006 in this case
+                // console.log('[close] Connection died');
+                indicators.connectionStatus.status = 0;
+                setTimeout(attemptSocketConnect, 50);
+            }
+        };
+
+        socket.onerror = function(error) {
+            // alert(`[error] ${error.message}`);
+            // console.log(error);
+            indicators.connectionStatus.status = 0;
+            setTimeout(attemptSocketConnect, 50);
+        };
+    }
+
+    function initializeIndicators() {
+        for (const key in indicators) {
+            $("#indicatorPanel").append(`<div class="indicatorDiv" id="`+key+`">
+                                            <div class="indicatorLight" id="`+key+`Indicator" id=""></div>
+                                            <div id="`+key+`Message"><p></p></div>
+                                        </div>`)
+        }
+    }
+
+    function updateIndicators(repeat) {
+        for (const key in indicators) {
+            $("#" + key + "Indicator").css("background-color", indicators[key].colors[indicators[key].status]);
+            $("#" + key + "Message p").text(indicators[key].messages[indicators[key].status]);
+        }
+        if (repeat) setTimeout(updateIndicators, 200, true);
+    }
+
+    $(document).ready(main)
+</script>
+</html>

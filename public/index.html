@@ -12,6 +12,10 @@
 
 <div id="indicatorPanel"></div>
 
+<table id="sampleTable">
+    <tr><th>Channel</th><th>Value</th></tr>
+</table>
+
 </body>
 <style>
 
@@ -43,6 +47,10 @@
 #indicatorPanel p  {
     padding: 0;
     margin: 0 12px 0 0;
+}
+
+.channel_value {
+    float: right;
 }
 
 </style>
@@ -81,11 +89,18 @@
 
         socket.onmessage = function(event) {
             const data = JSON.parse(event.data);
-            console.log(data);
-            console.log('hello?');
+            // console.log(data);
             if (data['indicators'] != null) {
                 indicators.deviceConnectionStatus.status = data['indicators'].deviceConnectionStatus.status
                 updateIndicators(false);
+            }
+            if (data['sample'] != null) {
+                let s = "<table id=\"sampleTable\">\n" +
+                    "    <tr><th>Channel</th><th>Value</th></tr>\n";
+                for (let i = 0; i < data['sample'].length; i++) s += "<tr><td>" + i + "</td><td class='channel_value'>" + data['sample'][i] + "</td></tr>"
+                s += "</table>";
+                $("#sampleTable").remove();
+                $("body").append(s);
             }
         };
 

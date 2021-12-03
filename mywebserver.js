@@ -24,6 +24,7 @@ class MyWebServers {
             console.log('socket connected');
             this.ws = ws;
             this.ws.send(JSON.stringify(this.currentStatus));
+            this.refreshClient(true);
             this.ws.on('message', function incoming(message) {
 
             });
@@ -47,6 +48,15 @@ class MyWebServers {
             this.currentStatus["indicators"].deviceConnectionStatus.status = status;
             this.ws.send(JSON.stringify(this.currentStatus));
         }
+    }
+
+    onSample(sample) {
+        this.currentStatus['sample'] = sample;
+    }
+
+    refreshClient(repeat) {
+        if (this.ws != null) this.ws.send(JSON.stringify(this.currentStatus));
+        if (repeat) setTimeout(this.refreshClient.bind(this), 50, repeat);
     }
 }
 

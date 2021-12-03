@@ -61,7 +61,7 @@
             status: 0,
             options: [0, 1, 2],
             colors: ["red", "yellow", "green"],
-            messages: ["Not Connected", "Attempting Connection...", "Connected"]
+            messages: ["Cyton Not Connected", "Attempting Cyton Connection...", "Cyton Connected"]
         }
     }
 
@@ -81,6 +81,12 @@
 
         socket.onmessage = function(event) {
             const data = JSON.parse(event.data);
+            console.log(data);
+            console.log('hello?');
+            if (data['indicators'] != null) {
+                indicators.deviceConnectionStatus.status = data['indicators'].deviceConnectionStatus.status
+                updateIndicators(false);
+            }
         };
 
         socket.onclose = function(event) {

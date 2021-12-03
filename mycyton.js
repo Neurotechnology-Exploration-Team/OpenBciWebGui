@@ -3,10 +3,12 @@
 const Cyton = require('@openbci/cyton'); // requires node <= v9
 
 class MyCyton {
-    constructor() {
+    constructor(onConnectionStatusChange) {
+        this.onConnectionStatusChange = onConnectionStatusChange
+
         this.ourBoard = new Cyton({});
         this.ourBoard.listPorts().then(ports => {
-            console.log(ports);
+            // console.log(ports);
             this.attemptConnect(ports, 0, () => {
                 console.log('Connected!');
                 this.ourBoard.streamStart();
@@ -26,9 +28,12 @@ class MyCyton {
     }
 
     attemptConnect(ports, index, onsuccess) {
-        console.log('connecting...');
+        this.onConnectionStatusChange(1);
         this.ourBoard.connect(ports[index].comName) // Port name is a serial port name, see `.listPorts()`
-            .then(() => {console.log('connected!')})
+            .then(() => {
+                this.onConnectionStatusChange(2);
+                onsuccess();
+            })
             .catch(err => {
                 console.log('Caught error connecting: ' + err + '; this usually means there is no device on this port, please wait.');
                 if (index + 1 < ports.length) {
@@ -37,6 +42,7 @@ class MyCyton {
                 }
                 else {
                     console.log('No device found.');
+                    this.onConnectionStatusChange(0);
                 }
             });
     }

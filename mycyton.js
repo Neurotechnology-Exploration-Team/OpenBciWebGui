@@ -4,11 +4,13 @@ const Cyton = require('@openbci/cyton'); // requires node <= v9
 
 class MyCyton {
     constructor() {
-        this.ourBoard = new Cyton();
-        this.ourBoard.connect(portName) // Port name is a serial port name, see `.listPorts()`
-            .then(() => {
+        this.ourBoard = new Cyton({});
+        this.ourBoard.listPorts().then(ports => {
+            console.log(ports);
+            this.attemptConnect(ports, 0, () => {
+                console.log('Connected!');
                 this.ourBoard.streamStart();
-                this.ourBoard.on('sample',(sample) => {
+                this.ourBoard.on('sample', (sample) => {
                     /** Work with sample */
                     for (let i = 0; i < this.ourBoard.numberOfChannels(); i++) {
                         console.log("Channel " + (i + 1) + ": " + sample.channelData[i].toFixed(8) + " Volts.");
@@ -19,6 +21,23 @@ class MyCyton {
                         //  "Channel 8: -0.00001875 Volts."
                     }
                 });
+            });
+        });
+    }
+
+    attemptConnect(ports, index, onsuccess) {
+        console.log('connecting...');
+        this.ourBoard.connect(ports[index].comName) // Port name is a serial port name, see `.listPorts()`
+            .then(() => {console.log('connected!')})
+            .catch(err => {
+                console.log('Caught error connecting: ' + err + '; this usually means there is no device on this port, please wait.');
+                if (index + 1 < ports.length) {
+                    console.log('Attempting next port... ' + ports[index + 1].comName);
+                    this.attemptConnect(ports, index + 1, onsuccess);
+                }
+                else {
+                    console.log('No device found.');
+                }
             });
     }
 }

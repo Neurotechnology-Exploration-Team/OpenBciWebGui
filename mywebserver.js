@@ -12,7 +12,7 @@ class MyWebServers {
         this.wss = new WebSocketServer({ port: 8080 });
 
         this.wss.on('connection', function connection(ws) {
-            console.log('connected');
+            console.log('socket connected');
             ws.on('message', function incoming(message) {
 
             });

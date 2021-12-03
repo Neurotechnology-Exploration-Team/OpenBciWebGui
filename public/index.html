@@ -23,9 +23,14 @@
     margin: 12px;
 }
 
+#indicatorPanel {
+    display: flex;
+    flex-direction: column;
+}
+
 .indicatorDiv {
     border: 1px solid black;
-    display: inline-flex;
+    display: flex;
     flex-direction: row;
     align-items: center;
 }
@@ -51,6 +56,12 @@
             options: [0, 1],
             colors: ["red", "green"],
             messages: ["Network Error", "Network Connected"]
+        },
+        deviceConnectionStatus: {
+            status: 0,
+            options: [0, 1, 2],
+            colors: ["red", "yellow", "green"],
+            messages: ["Not Connected", "Attempting Connection...", "Connected"]
         }
     }
 

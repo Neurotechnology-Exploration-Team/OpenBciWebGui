@@ -20,7 +20,7 @@
     <div id="indicatorPanel"></div>
 
     <table id="channelTable">
-        <tr><td><h2>Channel</h2></td><td><h2>Threshold</h2></td><td><h2>Action</h2></td></tr>
+        <tr><td><h2>Channel</h2></td><td><h2>Threshold</h2></td><td><h2>Action</h2></td><td><h2>Action Type</h2></td><td><h2>Threshold Type</h2></td><td><h2>Threshold Type Parameter</h2></td></tr>
 <!--        <tr id="channel0"><td><h3>0</h3></td><td>-->
 <!--            <div class="sliderDiv">-->
 <!--                <button onclick="decreaseGraphSize(0)">-</button>-->
@@ -49,19 +49,21 @@
 
     <div id="settingsPanel">
         <input type="checkbox" id="toggle_advanced" onclick="toggle('advanced')"><h4>Advanced</h4><br>
-        <button style="display: none">Reconnect Cyton</button><br>
+        <button onclick="reconnect()">Reconnect Cyton</button><br>
         <h4>Slider size:</h4><input type="number" id="sliderSizer" value="100" onchange="newSliderWidth()" min="0" style="width: 60px"><br>
         <h4>Reset slider scales:</h4>
-        <select id="resetSliderSelect" onchange="resetSliderLimits()">
-            <option value="0.00001">0.00001</option>
-            <option value="0.0001" selected>0.0001</option>
-            <option value="0.001">0.001</option>
-            <option value="0.01">0.01</option>
-            <option value="0.1">0.1</option>
-            <option value="1">1</option>
-            <option value="10">10</option>
-            <option value="100">100</option>
-        </select>
+        <input id="resetSliderSelect" onchange="resetSliderLimits()" min="0" style="width: 60px" value="0.0001"><br>
+        <h4>Set all action types:</h4><select id="actionTypeGlobal" onchange="newActionTypeGlobal()">
+        <option value='tap'>tap</option>
+        <option value='toggle'>toggle</option>
+        <option value='feather'>feather</option>
+    </select><br><h4>Set all threshold types:</h4><select id="thresholdTypeGlobal" onchange="newThresholdTypeGlobal()">
+        <option value='average' selected>Average</option>
+       <option value='max'>Max</option>
+       <option value='last'>Last</option>
+    </select><br>
+        <h4>Set all threshold parameters:</h4><input type="number" id="thresholdParameterGlobal" value="500" onchange="newParameterGlobal()" min="0" max="1000" style="width: 60px"><br>
+        <input type="checkbox" id="toggle_allowSim" onclick="toggle('allowSim')"><h4>Allow Simulator</h4><br>
     </div>
 </div>
 
@@ -119,7 +121,7 @@ body {
     text-align: center;
 }
 
-#channelTable h2 {
+#channelTable h2, #channelTable select {
     margin: 10px;
 }
 
@@ -236,6 +238,9 @@ button, .slider {
     let graphLimits = {};
     let thresholds = {};
     let actions = {};
+    let actionTypes = {};
+    let thresholdTypes = {};
+    let thresholdParameters = {};
 
     let numChannels = null;
 
@@ -275,15 +280,22 @@ button, .slider {
             // console.log(data);
             if (data['indicators'] != null) {
                 indicators.deviceConnectionStatus.status = data['indicators'].deviceConnectionStatus.status
+                if (indicators.deviceConnectionStatus.status === 0) {
+                    $(".channelRow").remove();
+                    numChannels = null;
+                }
                 updateIndicators(false);
             }
-            if (data['sample'] != null) {
+            if (indicators.deviceConnectionStatus.status !== 0 && data['sample'] != null) {
                 if (numChannels == null) {
                     numChannels = data['sample'].length;
                     for (let i = 0; i < numChannels; i++) {
                         graphLimits[i] = 0.0001;
                         thresholds[i] = 0;
                         actions[i] = "a";
+                        actionTypes[i] = "tap";
+                        thresholdTypes[i] = "average";
+                        thresholdParameters[i] = 500;
                         buildChannelRow(i);
                         $("#channel"+i+" .slider").click(clickSlider);
                     }
@@ -301,7 +313,10 @@ button, .slider {
             }
             socket.send(JSON.stringify({
                 thresholds: thresholds,
-                actions: actions
+                actions: actions,
+                actionTypes: actionTypes,
+                thresholdTypes: thresholdTypes,
+                thresholdParameters: thresholdParameters
             }));
         };
 
@@ -350,6 +365,12 @@ button, .slider {
             } else {
                 $(".advancedData").hide();
             }
+        } else if (x === "allowSim") {
+            if ($("#toggle_"+x).is(":checked")) {
+                socket.send(JSON.stringify({'allowSim': true}));
+            } else {
+                socket.send(JSON.stringify({'allowSim': false}));
+            }
         }
     }
 
@@ -374,6 +395,18 @@ button, .slider {
         actions[x] = $("#channel"+x+" .actionSelect").val();
     }
 
+    function actionTypeChange(x) {
+        actionTypes[x] = $("#channel"+x+" .actionTypeSelect").val();
+    }
+
+    function thresholdTypeChange(x) {
+        thresholdTypes[x] = $("#channel"+x+" .thresholdTypeSelect").val();
+    }
+
+    function thresholdParameterChange(x) {
+        thresholdParameters[x] = $("#channel"+x+" .thresholdParameterSelect").val();
+    }
+
     function newSliderWidth() {
         sliderSize = $("#sliderSizer").val();
         $(".slider").css("width", sliderSize + "px");
@@ -393,10 +426,32 @@ button, .slider {
         $("#channel"+x+" .advancedData .graphLimit").text("Limit: " + graphLimits[x]);
     }
 
+    function reconnect() {
+        socket.send(JSON.stringify({'reconnect': true}));
+    }
+
+    function newThresholdTypeGlobal() {
+        $(".thresholdTypeSelect").val($("#thresholdTypeGlobal").val());
+        for (let i = 0; i < numChannels; i++) thresholdTypeChange(i);
+    }
+
+    function newParameterGlobal() {
+        $(".thresholdParameterSelect").val($("#thresholdParameterGlobal").val());
+        for (let i = 0; i < numChannels; i++) thresholdParameterChange(i);
+    }
+
+    function newActionTypeGlobal() {
+        $(".actionTypeSelect").val($("#actionTypeGlobal").val());
+        for (let i = 0; i < numChannels; i++) actionTypes[i] = $("#channel"+i+" .actionTypeSelect").val();
+    }
+
     function buildChannelRow(id) {
         let sliderActionOptions = "";
         const alphabet = "abcdefghijklmnopqrstuvwxyz123456789";
+        let keys = ['backspace','delete','tab','enter','escape','up','down','right','left','home','end','pageup','pagedown',
+        'f1','f2','f3','f4','f5','f6','f7','f8','f9','f10','f11','f12','command','alt','control','shift','right_shift','space','printscreen','insert'];
         for (let i = 0; i < alphabet.length; i++) sliderActionOptions += "<option value=\"" + alphabet.substr(i, 1) + "\">" + alphabet.substr(i, 1).toUpperCase() + "</option>\n";
+        for (let i = 0; i < keys.length; i++) sliderActionOptions += "<option value=\"" + keys[i] + "\">" + keys[i] + "</option>\n";
         const selectScale = "<select id=\"resetSliderSelect"+id+"\" onchange=\"resetSliderLimit("+id+")\">\n" +
             "            <option value=\"0.00001\">0.00001</option>\n" +
             "            <option value=\"0.0001\" selected>0.0001</option>\n" +
@@ -428,7 +483,16 @@ button, .slider {
                                 sliderActionOptions +
             "                </select>\n" +
             "            </label>\n" +
-            "        </td></tr>";
+            "        </td><td><select class='actionTypeSelect' onchange='actionTypeChange(\""+id+"\")'>" +
+            "                   <option value='tap'>tap</option>" +
+            "                   <option value='toggle'>toggle</option>" +
+            "                   <option value='feather'>feather</option>" +
+            "</select></td><td><select class='thresholdTypeSelect' onchange='thresholdTypeChange(\""+id+"\")'>" +
+            "                   <option value='average' selected>Average</option>" +
+            "                   <option value='max'>Max</option>" +
+            "                   <option value='last'>Last</option>" +
+            "</select></td><td><input type='number' class='thresholdParameterSelect' value='500' " +
+            "                       onchange='thresholdParameterChange(\""+id+"\")'></td></tr>";
         $("#channelTable").append(s);
     }
 

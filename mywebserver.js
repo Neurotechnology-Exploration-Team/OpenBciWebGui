@@ -5,9 +5,11 @@ const WebSocketServer = require("ws").WebSocketServer;
 const express = require("express");
 
 class MyWebServers {
-    constructor(onThresholdChange) {
+    constructor(onThresholdChange, onReconnect, onAllowSim) {
 
         this.onThresholdChange = onThresholdChange;
+        this.onReconnect = onReconnect;
+        this.onAllowSim = onAllowSim;
 
         this.currentStatus = {
             "indicators": {
@@ -30,7 +32,9 @@ class MyWebServers {
             this.ws.on('message', function incoming(message) {
                 try {
                     const data = JSON.parse(message);
-                    this.onThresholdChange(data['thresholds'], data['actions']);
+                    if (data['thresholds'] !== undefined) this.onThresholdChange(data['thresholds'], data['actions'], data['actionTypes'], data['thresholdTypes'], data['thresholdParameters']);
+                    if (data['reconnect'] !== undefined) this.onReconnect();
+                    if (data['allowSim'] !== undefined) this.onAllowSim(data['allowSim']);
                 } catch (e) {
                     console.log('bad message: ' + message);
                 }
@@ -59,11 +63,12 @@ class MyWebServers {
 
     onSample(sample) {
         this.currentStatus['sample'] = sample;
+        this.ws.send(JSON.stringify(this.currentStatus));
     }
 
     refreshClient(repeat) {
-        if (this.ws != null) this.ws.send(JSON.stringify(this.currentStatus));
-        if (repeat) setTimeout(this.refreshClient.bind(this), 50, repeat);
+        // if (this.ws != null)
+        // if (repeat) setTimeout(this.refreshClient.bind(this), 50, repeat);
     }
 }
 

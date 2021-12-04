@@ -1,25 +1,29 @@
 const robot = require("robotjs");
 
-let threshold = null;
+let thresholds = null;
+let actions = null;
 
 const MyWebServers = require("./mywebserver");
-const myWebServer = new MyWebServers(newThreshold => {
-    threshold = newThreshold;
+const myWebServer = new MyWebServers((newThresholds, newActions) => {
+    thresholds = newThresholds;
+    actions = newActions;
 });
 
-let wDown = false;
+let wDown = [];
 
 const MyCyton = require("./mycyton");
 const myCyton = new MyCyton(status => {
     myWebServer.connectionStatusUpdate(status);
 }, sample => {
-    if (sample[0] > threshold && !wDown) {
-        robot.keyToggle("a", "down");
-        wDown = true;
-    }
-    else if (wDown) {
-        robot.keyToggle("a", "up");
-        wDown = false;
+    if (thresholds != null) for (let channel = 0; channel < sample.length; channel++) {
+        if (sample[channel] > thresholds[channel] && (wDown[channel] === undefined || !wDown[channel])) {
+            robot.keyToggle(actions[channel], "down");
+            wDown[channel] = true;
+        }
+        else if (sample[channel] < thresholds[channel] && wDown[channel]) {
+            robot.keyToggle(actions[channel], "up");
+            wDown[channel] = false;
+        }
     }
     myWebServer.onSample(sample);
 });

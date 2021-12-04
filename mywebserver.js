@@ -30,7 +30,7 @@ class MyWebServers {
             this.ws.on('message', function incoming(message) {
                 try {
                     const data = JSON.parse(message);
-                    this.onThresholdChange(data['threshold']);
+                    this.onThresholdChange(data['thresholds'], data['actions']);
                 } catch (e) {
                     console.log('bad message: ' + message);
                 }

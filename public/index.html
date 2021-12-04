@@ -10,32 +10,120 @@
 </head>
 <body>
 
-<div id="indicatorPanel"></div>
+<div id="topBar">
+    <button onclick="$('#indicatorPanel').toggle();">Indicators</button>
+    <button onclick="$('#channelTable').toggle();">Channels</button>
+    <button onclick="$('#settingsPanel').toggle();">Settings</button>
+</div>
 
-<table id="sampleTable">
-    <tr><th>Channel</th><th>Value</th></tr>
-</table>
+<div id="mainPage">
+    <div id="indicatorPanel"></div>
 
-<input id="thresholdChooser" type="number" value="0.015">
+    <table id="channelTable">
+        <tr><td><h2>Channel</h2></td><td><h2>Threshold</h2></td><td><h2>Action</h2></td></tr>
+<!--        <tr id="channel0"><td><h3>0</h3></td><td>-->
+<!--            <div class="sliderDiv">-->
+<!--                <button onclick="decreaseGraphSize(0)">-</button>-->
+<!--                <div class="slider">-->
+<!--                    <div class="sliderGraph"></div>-->
+<!--                    <div class="sliderMarker"></div>-->
+<!--                </div>-->
+<!--                <button onclick="increaseGraphSize(0)">+</button>-->
+<!--            </div>-->
+<!--            <div class="advancedData">-->
+<!--                <p class="avg">Loading...</p>-->
+<!--                <p class="threshold">Threshold: 0</p>-->
+<!--                <p class="graphLimit">Limit: 0.00005</p>-->
+<!--            </div>-->
+<!--        </td><td>-->
+<!--            <label>-->
+<!--                <select>-->
+<!--                    <option value="w">W</option>-->
+<!--                    <option value="a">A</option>-->
+<!--                    <option value="s">S</option>-->
+<!--                    <option value="d">D</option>-->
+<!--                </select>-->
+<!--            </label>-->
+<!--        </td></tr>-->
+    </table>
 
+    <div id="settingsPanel">
+        <input type="checkbox" id="toggle_advanced" onclick="toggle('advanced')"><h4>Advanced</h4><br>
+        <button style="display: none">Reconnect Cyton</button><br>
+        <h4>Slider size:</h4><input type="number" id="sliderSizer" value="100" onchange="newSliderWidth()" min="0" style="width: 60px">
+    </div>
+</div>
+
+<input id="thresholdChooser" type="number" value="10.015">
 </body>
 <style>
 
-.indicatorLight {
-    width: 20px;
-    height: 20px;
-    background-color: red;
-    border-radius: 50%;
-    margin: 12px;
+* {
+    font-family: sans-serif;
+}
+
+#settingsPanel {
+    border: 1px solid black;
+    border-radius: 5px;
+}
+
+#settingsPanel * {
+    display: inline-block;
+    margin: 10px;
+}
+
+#settingsPanel h4 {
+    font-size: small;
+}
+
+#thresholdChooser {
+    display: none;
+}
+
+body {
+    text-align: center;
+}
+
+#topBar, #indicatorPanel, #channelTable, #settingsPanel {
+    margin: 5px;
+}
+
+#indicatorPanel, #channelTable, #settingsPanel {
+    display: inline-block;
+    vertical-align: top;
+}
+
+#channelTable {
+    border: 1px solid black;
+    border-radius: 10px;
+    border-collapse: collapse;
+}
+
+.channelRow {
+    border-top: 1px solid black;
+}
+
+#channelTable td {
+    /*border: 1px solid black;*/
+    text-align: center;
+}
+
+#channelTable h2 {
+    margin: 10px;
+}
+
+#channelTable .advancedData {
+    display: none;
 }
 
 #indicatorPanel {
-    display: flex;
+    display: inline-flex;
     flex-direction: column;
+    border-radius: 5px;
+    border: 1px solid black;
 }
 
 .indicatorDiv {
-    border: 1px solid black;
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -46,19 +134,97 @@
     padding: 0;
 }
 
+.indicatorLight {
+    width: 20px;
+    height: 20px;
+    background-color: red;
+    border-radius: 50%;
+    margin: 12px;
+}
+
 #indicatorPanel p  {
     padding: 0;
     margin: 0 12px 0 0;
 }
 
-.channel_value {
-    float: right;
+.channelDiv {
+    display: inline-block;
+    border: 1px solid black;
+    border-radius: 10px;
+    text-align: center;
+}
+
+.channelDiv h2 {
+    margin: 10px 10px 10px 10px;
+    font-size: large;
+}
+
+.channelDiv h4 {
+    display: inline-block;
+    font-size: small;
+}
+
+/*.channelDiv h3, .channelDiv input {*/
+/*    display: inline-block;*/
+/*}*/
+
+.sliderSectionDiv {
+    border-top: 1px solid black;
+    border-bottom: 1px solid black;
+}
+
+.optionsDiv {
+}
+
+.sliderDiv {
+    margin: 15px;
+}
+
+button, .slider {
+    display: inline-block;
+    vertical-align: top;
+}
+
+.slider {
+    width: 100px;
+    height: 20px;
+    background-color: lightgray;
+    border: 1px solid black;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.sliderMarker {
+    position: absolute;
+    width: 3px;
+    height: 20px;
+    border-radius: 2px;
+    background-color: rgba(0, 255, 0, 0.75);
+    z-index: 2;
+}
+
+.sliderGraph {
+    position: absolute;
+    width: 100px;
+    max-width: 100px;
+    height: 20px;
+    border-radius: 2px;
+    background-color: black;
+    z-index: 1;
 }
 
 </style>
 <script>
 
     let socket = null;
+
+    let graphLimits = {};
+    let thresholds = {};
+    let actions = {};
+
+    let numChannels = null;
+
+    let sliderSize = 100;
 
     let indicators = {
         connectionStatus: {
@@ -97,14 +263,31 @@
                 updateIndicators(false);
             }
             if (data['sample'] != null) {
-                let s = "<table id=\"sampleTable\">\n" +
-                    "    <tr><th>Channel</th><th>Value</th><th>Pressed?</th><th>Threshold</th></tr>\n";
-                for (let i = 0; i < data['sample'].length; i++) s += "<tr><td>" + i + "</td><td class='channel_value'>" + data['sample'][i] + "</td><td><div class='indicatorLight' id='indicatorLightChannel"+i+"' style='background-color: "+(data['sample'][i] > parseFloat($("#thresholdChooser").val()) ? "green" : "red")+"'></div></td><td><input type='number' value='" + $("#thresholdChooser").val() + "'></td></tr>"
-                s += "</table>";
-                $("#sampleTable").remove();
-                $("body").append(s);
+                if (numChannels == null) {
+                    numChannels = data['sample'].length;
+                    for (let i = 0; i < numChannels; i++) {
+                        graphLimits[i] = 0.00005;
+                        thresholds[i] = 0;
+                        actions[i] = "a";
+                        buildChannelRow(i);
+                        $("#channel"+i+" .slider").click(clickSlider);
+                    }
+                }
+                // let s = "<table id=\"sampleTable\">\n" +
+                //     "    <tr><th>Channel</th><th>Value</th><th>Pressed?</th><th>Threshold</th></tr>\n";
+                for (let i = 0; i < data['sample'].length; i++) {
+                    // s += "<tr><td>" + i + "</td><td class='channel_value'>" + data['sample'][i] + "</td><td><div class='indicatorLight' id='indicatorLightChannel"+i+"' style='background-color: "+(data['sample'][i] > parseFloat($("#thresholdChooser").val()) ? "green" : "red")+"'></div></td><td><input type='number' value='" + $("#thresholdChooser").val() + "'></td></tr>"
+                    $("#channel" + i + " .sliderGraph").css("width", ((data['sample'][i]/graphLimits[i])*sliderSize) + "px");
+                    $("#channel" + i + " .advancedData .avg").text("Ao500: " + data['sample'][i]);
+                }
+                // s += "</table>";
+                // $("#sampleTable").remove();
+                // $("body").append(s);
             }
-            socket.send(JSON.stringify({threshold: parseFloat($("#thresholdChooser").val())}));
+            socket.send(JSON.stringify({
+                thresholds: thresholds,
+                actions: actions
+            }));
         };
 
         socket.onclose = function(event) {
@@ -143,6 +326,72 @@
             $("#" + key + "Message p").text(indicators[key].messages[indicators[key].status]);
         }
         if (repeat) setTimeout(updateIndicators, 200, true);
+    }
+
+    function toggle(x) {
+        if (x === "advanced") {
+            if ($("#toggle_"+x).is(":checked")) {
+                $(".advancedData").show();
+            } else {
+                $(".advancedData").hide();
+            }
+        }
+    }
+
+    function decreaseGraphSize(x) {
+        graphLimits[x] = (graphLimits[x] * 0.8).toFixed(8);
+        $("#channel"+x+" .advancedData .graphLimit").text("Limit: " + graphLimits[x]);
+    }
+
+    function increaseGraphSize(x) {
+        graphLimits[x] = (graphLimits[x] * 1.2).toFixed(8);
+        $("#channel"+x+" .advancedData .graphLimit").text("Limit: " + graphLimits[x]);
+    }
+
+    function clickSlider(e) {
+        const x = (parseInt(e.currentTarget.id.split('slider')[1]));
+        $("#channel"+x+" .sliderMarker").css('margin-left', (e.offsetX / sliderSize) * sliderSize + "px");
+        thresholds[x] = ((e.offsetX / sliderSize) * graphLimits[x]).toFixed(8);
+        $("#channel"+x+" .advancedData .threshold").text("Threshold: " + thresholds[x]);
+    }
+
+    function actionChange(x) {
+        actions[x] = $("#channel"+x+" .actionSelect").val();
+    }
+
+    function newSliderWidth() {
+        sliderSize = $("#sliderSizer").val();
+        $(".slider").css("width", sliderSize + "px");
+        // $(".sliderGraph").css("width", sliderSize + "px");
+        $(".sliderGraph").css("max-width", sliderSize + "px");
+    }
+
+    function buildChannelRow(id) {
+        let sliderActionOptions = "";
+        const alphabet = "abcdefghijklmnopqrstuvwxyz123456789";
+        for (let i = 0; i < alphabet.length; i++) sliderActionOptions += "<option value=\"" + alphabet.substr(i, 1) + "\">" + alphabet.substr(i, 1).toUpperCase() + "</option>\n";
+        let s = "<tr class=\"channelRow\" id=\"channel"+id+"\"><td><h3>"+id+"</h3></td><td>\n" +
+            "            <div class=\"sliderDiv\">\n" +
+            "                <button onclick=\"decreaseGraphSize("+id+")\">-</button>\n" +
+            "                <div id='slider"+id+"' class=\"slider\">\n" +
+            "                    <div class=\"sliderGraph\"></div>\n" +
+            "                    <div class=\"sliderMarker\"></div>\n" +
+            "                </div>\n" +
+            "                <button onclick=\"increaseGraphSize("+id+")\">+</button>\n" +
+            "            </div>\n" +
+            "            <div class=\"advancedData\">\n" +
+            "                <p class=\"avg\">Loading...</p>\n" +
+            "                <p class=\"threshold\">Threshold: 0</p>\n" +
+            "                <p class=\"graphLimit\">Limit: 0.00005</p>\n" +
+            "            </div>\n" +
+            "        </td><td>\n" +
+            "            <label>\n" +
+            "                <select class='actionSelect' onchange='actionChange(\""+id+"\")'>\n" +
+                                sliderActionOptions +
+            "                </select>\n" +
+            "            </label>\n" +
+            "        </td></tr>";
+        $("#channelTable").append(s);
     }
 
     $(document).ready(main)

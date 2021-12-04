@@ -50,7 +50,18 @@
     <div id="settingsPanel">
         <input type="checkbox" id="toggle_advanced" onclick="toggle('advanced')"><h4>Advanced</h4><br>
         <button style="display: none">Reconnect Cyton</button><br>
-        <h4>Slider size:</h4><input type="number" id="sliderSizer" value="100" onchange="newSliderWidth()" min="0" style="width: 60px">
+        <h4>Slider size:</h4><input type="number" id="sliderSizer" value="100" onchange="newSliderWidth()" min="0" style="width: 60px"><br>
+        <h4>Reset slider scales:</h4>
+        <select id="resetSliderSelect" onchange="resetSliderLimits()">
+            <option value="0.00001">0.00001</option>
+            <option value="0.0001" selected>0.0001</option>
+            <option value="0.001">0.001</option>
+            <option value="0.01">0.01</option>
+            <option value="0.1">0.1</option>
+            <option value="1">1</option>
+            <option value="10">10</option>
+            <option value="100">100</option>
+        </select>
     </div>
 </div>
 
@@ -110,6 +121,10 @@ body {
 
 #channelTable h2 {
     margin: 10px;
+}
+
+#channelTable p {
+    display: inline-block;
 }
 
 #channelTable .advancedData {
@@ -266,7 +281,7 @@ button, .slider {
                 if (numChannels == null) {
                     numChannels = data['sample'].length;
                     for (let i = 0; i < numChannels; i++) {
-                        graphLimits[i] = 0.00005;
+                        graphLimits[i] = 0.0001;
                         thresholds[i] = 0;
                         actions[i] = "a";
                         buildChannelRow(i);
@@ -366,10 +381,32 @@ button, .slider {
         $(".sliderGraph").css("max-width", sliderSize + "px");
     }
 
+    function resetSliderLimits() {
+        for (const key in Object.keys(graphLimits)) {
+            graphLimits[key] = parseFloat($("#resetSliderSelect").val());
+            $("#channel"+key+" .advancedData .graphLimit").text("Limit: " + graphLimits[key]);
+        }
+    }
+
+    function resetSliderLimit(x) {
+        graphLimits[x] = parseFloat($("#resetSliderSelect"+x).val());
+        $("#channel"+x+" .advancedData .graphLimit").text("Limit: " + graphLimits[x]);
+    }
+
     function buildChannelRow(id) {
         let sliderActionOptions = "";
         const alphabet = "abcdefghijklmnopqrstuvwxyz123456789";
         for (let i = 0; i < alphabet.length; i++) sliderActionOptions += "<option value=\"" + alphabet.substr(i, 1) + "\">" + alphabet.substr(i, 1).toUpperCase() + "</option>\n";
+        const selectScale = "<select id=\"resetSliderSelect"+id+"\" onchange=\"resetSliderLimit("+id+")\">\n" +
+            "            <option value=\"0.00001\">0.00001</option>\n" +
+            "            <option value=\"0.0001\" selected>0.0001</option>\n" +
+            "            <option value=\"0.001\">0.001</option>\n" +
+            "            <option value=\"0.01\">0.01</option>\n" +
+            "            <option value=\"0.1\">0.1</option>\n" +
+            "            <option value=\"1\">1</option>\n" +
+            "            <option value=\"10\">10</option>\n" +
+            "            <option value=\"100\">100</option>\n" +
+            "        </select>";
         let s = "<tr class=\"channelRow\" id=\"channel"+id+"\"><td><h3>"+id+"</h3></td><td>\n" +
             "            <div class=\"sliderDiv\">\n" +
             "                <button onclick=\"decreaseGraphSize("+id+")\">-</button>\n" +
@@ -380,9 +417,10 @@ button, .slider {
             "                <button onclick=\"increaseGraphSize("+id+")\">+</button>\n" +
             "            </div>\n" +
             "            <div class=\"advancedData\">\n" +
-            "                <p class=\"avg\">Loading...</p>\n" +
-            "                <p class=\"threshold\">Threshold: 0</p>\n" +
-            "                <p class=\"graphLimit\">Limit: 0.00005</p>\n" +
+            "                <p class=\"avg\">Loading...</p><br>\n" +
+            "                <p class=\"threshold\">Threshold: 0</p><br>\n" +
+            "                <p class=\"graphLimit\">Limit: 0.0001</p><br>\n" +
+            "                <p style='margin-right: 0.5em'>Reset scale: </p>" + selectScale + "\n" +
             "            </div>\n" +
             "        </td><td>\n" +
             "            <label>\n" +

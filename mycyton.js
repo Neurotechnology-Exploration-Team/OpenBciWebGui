@@ -7,11 +7,24 @@ class MyCyton {
         this.onConnectionStatusChange = onConnectionStatusChange;
         this.onSample = onSample;
         this.timeout = null;
-        this.portNum = 2;
+        this.portNum = null;
+
+        this.savedSamples = [];
+        this.samplesPerAverage = 500;
+        this.emitSamples();
 
         this.ourBoard = new Cyton({});
         this.ourBoard.listPorts().then(ports => {
-            // console.log(ports);
+            console.log(ports);
+            for (let i = 0; i < ports.length; i++) if (ports[i].productId === '6015') {
+                this.portNum = i;
+                console.log('I think the board is on port ' + i);
+            }
+            if (this.portNum == null) for (let i = 0; i < ports.length; i++) if (ports[i].comName === 'OpenBCISimulator') {
+                this.portNum = i;
+                console.log('Using simulator on port ' + i);
+            }
+            if (this.portNum == null) this.portNum = 0;
             this.attemptConnect(ports, () => {
                 console.log('Connected!');
 
@@ -36,10 +49,25 @@ class MyCyton {
                         //  ...
                         //  "Channel 8: -0.00001875 Volts."
                     }
-                    this.onSample(this.mySample);
+                    this.savedSamples.push(this.mySample);
                 });
             });
         });
+    }
+
+    emitSamples() {
+        if (this.savedSamples.length > 0) {
+            if (this.savedSamples.length > this.samplesPerAverage) this.savedSamples = this.savedSamples.slice(this.savedSamples.length - this.samplesPerAverage);
+            let avgs = [];
+            for (let c = 0; c < this.ourBoard.numberOfChannels(); c++) {
+                let avg = 0;
+                for (let i = 0; i < this.savedSamples.length; i++) avg += Math.abs(this.savedSamples[i][c]);
+                avg /= this.savedSamples.length;
+                avgs.push(avg.toFixed(8));
+            }
+            this.onSample(avgs);
+        }
+        setTimeout(this.emitSamples.bind(this), 50);
     }
 
     attemptConnect(ports, onsuccess) {

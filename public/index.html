@@ -16,6 +16,8 @@
     <tr><th>Channel</th><th>Value</th></tr>
 </table>
 
+<input id="thresholdChooser" type="number" value="0.015">
+
 </body>
 <style>
 
@@ -96,12 +98,13 @@
             }
             if (data['sample'] != null) {
                 let s = "<table id=\"sampleTable\">\n" +
-                    "    <tr><th>Channel</th><th>Value</th></tr>\n";
-                for (let i = 0; i < data['sample'].length; i++) s += "<tr><td>" + i + "</td><td class='channel_value'>" + data['sample'][i] + "</td></tr>"
+                    "    <tr><th>Channel</th><th>Value</th><th>Pressed?</th><th>Threshold</th></tr>\n";
+                for (let i = 0; i < data['sample'].length; i++) s += "<tr><td>" + i + "</td><td class='channel_value'>" + data['sample'][i] + "</td><td><div class='indicatorLight' id='indicatorLightChannel"+i+"' style='background-color: "+(data['sample'][i] > parseFloat($("#thresholdChooser").val()) ? "green" : "red")+"'></div></td><td><input type='number' value='" + $("#thresholdChooser").val() + "'></td></tr>"
                 s += "</table>";
                 $("#sampleTable").remove();
                 $("body").append(s);
             }
+            socket.send(JSON.stringify({threshold: parseFloat($("#thresholdChooser").val())}));
         };
 
         socket.onclose = function(event) {

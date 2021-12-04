@@ -5,7 +5,9 @@ const WebSocketServer = require("ws").WebSocketServer;
 const express = require("express");
 
 class MyWebServers {
-    constructor() {
+    constructor(onThresholdChange) {
+
+        this.onThresholdChange = onThresholdChange;
 
         this.currentStatus = {
             "indicators": {
@@ -26,8 +28,13 @@ class MyWebServers {
             this.ws.send(JSON.stringify(this.currentStatus));
             this.refreshClient(true);
             this.ws.on('message', function incoming(message) {
-
-            });
+                try {
+                    const data = JSON.parse(message);
+                    this.onThresholdChange(data['threshold']);
+                } catch (e) {
+                    console.log('bad message: ' + message);
+                }
+            }.bind(this));
         }.bind(this));
 
         // express

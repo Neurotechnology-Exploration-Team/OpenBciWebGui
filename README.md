@@ -26,8 +26,14 @@
 
 - The background of the slider in the Threshold section shows the current level of input. Use the + and - buttons to increase and decrease the scale, especially if the input exceeds the width of the slider.
 - Click anywhere on a slider to set a threshold. When the input exceeds this threshold, the action will be completed.
+- In "average" mode, the input will be the absolute average of the last x samples, where x is determined by the Threshold Parameter.
+- In "max" mode, the input will be the absolute maximum of the last x samples, where x is determined by the Threshold Parameter.
+- In "last" mode, the input will be the most recent sample.
 - The action column allows you to select which key is pressed (simulated keyboard input) when the input exceeds the threshold.
 - The action type column allows you to select whether the key is toggled, tapped, or feathered.
+- In "toggle" mode, the keyDown event will fire when the threshold is exceeded, and the keyUp event will fire when the input falls back below the threshold.
+- In "tap" mode, the keyPress event will fire when the threshold is exceeded.
+- In "feather" mode, the keyPress event will fire several times per second while the input is greater than the threshold.
 
 - "Advanced" mode will toggle numeric data for each channel.
 - If "Allow Simulator" is checked, the program will use simulated OpenBCI data in the absence of a Cyton board.

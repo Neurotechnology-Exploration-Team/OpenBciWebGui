@@ -11,8 +11,10 @@
   "license": "ISC",
   "dependencies": {
     "@openbci/cyton": "^2.0.1",
+    "@openbci/wifi": "^1.0.2",
     "express": "^4.17.1",
     "node-gyp": "^8.4.1",
+    "open": "^8.4.0",
     "robotjs": "^0.6.0",
     "serialport": "^9.2.8",
     "ws": "^8.3.0"

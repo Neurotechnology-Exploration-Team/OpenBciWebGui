@@ -49,7 +49,9 @@
 
     <div id="settingsPanel">
         <input type="checkbox" id="toggle_advanced" onclick="toggle('advanced')"><h4>Advanced</h4><br>
+        <button onclick="disconnect()">Disconnect Cyton</button><br>
         <button onclick="reconnect()">Reconnect Cyton</button><br>
+        <button onclick="terminate()">Terminate Program</button><br>
         <h4>Slider size:</h4><input type="number" id="sliderSizer" value="100" onchange="newSliderWidth()" min="0" style="width: 60px"><br>
         <h4>Reset slider scales:</h4>
         <input id="resetSliderSelect" onchange="resetSliderLimits()" min="0" style="width: 60px" value="0.0001"><br>
@@ -64,6 +66,11 @@
     </select><br>
         <h4>Set all threshold parameters:</h4><input type="number" id="thresholdParameterGlobal" value="500" onchange="newParameterGlobal()" min="0" max="1000" style="width: 60px"><br>
         <input type="checkbox" id="toggle_allowSim" onclick="toggle('allowSim')"><h4>Allow Simulator</h4><br>
+        <select id="boardTypeSelect" onchange="changeBoardType()">
+            <option value="Cyton">Cyton</option>
+            <option value="WifiCyton">Wifi Cyton</option>
+        </select><br>
+        <input id="boardTypeSelectName" type="text" value="OpenBCI-6D58" onchange="changeBoardType()">
     </div>
 </div>
 
@@ -230,6 +237,11 @@ button, .slider {
     z-index: 1;
 }
 
+#boardTypeSelectName {
+    display: none;
+    text-align: center;
+}
+
 </style>
 <script>
 
@@ -241,6 +253,8 @@ button, .slider {
     let actionTypes = {};
     let thresholdTypes = {};
     let thresholdParameters = {};
+    let boardType = "Cyton";
+    let boardName = "OpenBCI-6D58"
 
     let numChannels = null;
 
@@ -316,7 +330,9 @@ button, .slider {
                 actions: actions,
                 actionTypes: actionTypes,
                 thresholdTypes: thresholdTypes,
-                thresholdParameters: thresholdParameters
+                thresholdParameters: thresholdParameters,
+                boardType: boardType,
+                boardName: boardName
             }));
         };
 
@@ -426,8 +442,17 @@ button, .slider {
         $("#channel"+x+" .advancedData .graphLimit").text("Limit: " + graphLimits[x]);
     }
 
+    function disconnect() {
+        socket.send(JSON.stringify({'disconnect': true}));
+    }
+
     function reconnect() {
         socket.send(JSON.stringify({'reconnect': true}));
+    }
+
+    function terminate() {
+        socket.send(JSON.stringify({'disconnect': true, 'terminate': true}));
+        window.close();
     }
 
     function newThresholdTypeGlobal() {
@@ -443,6 +468,15 @@ button, .slider {
     function newActionTypeGlobal() {
         $(".actionTypeSelect").val($("#actionTypeGlobal").val());
         for (let i = 0; i < numChannels; i++) actionTypes[i] = $("#channel"+i+" .actionTypeSelect").val();
+    }
+
+    function changeBoardType() {
+        boardType = $("#boardTypeSelect").val();
+        if (boardType === "WifiCyton") {
+            $("#boardTypeSelectName").show();
+            boardName = $("#boardTypeSelectName").val();
+        }
+        else ("#boardTypeSelectName").hide();
     }
 
     function buildChannelRow(id) {

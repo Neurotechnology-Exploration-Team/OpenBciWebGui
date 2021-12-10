@@ -1,6 +1,7 @@
 // --------------------------------------- Cyton stuff ---------------------------------------
 
 const Cyton = require('@openbci/cyton'); // requires node <= v9
+const WifiCyton = require('@openbci/wifi');
 
 class MyCyton {
     constructor(onConnectionStatusChange, onSample) {
@@ -15,7 +16,11 @@ class MyCyton {
         this.lastEmitted = 0;
         this.lastSampleTime = 0;
 
+        this.notTerminated = true;
+
         this.allowSim = false;
+        this.boardType = "Cyton";
+        this.boardName = "OpenBCI-6D58"
         this.thresholdTypes = null;
         this.thresholdParameters = null;
 
@@ -35,7 +40,7 @@ class MyCyton {
             }
             if (this.savedSamples.length > this.samplesPerAverage) this.savedSamples = this.savedSamples.slice(this.savedSamples.length - this.samplesPerAverage);
             let calculatedSample = [];
-            for (let c = 0; c < this.ourBoard.numberOfChannels(); c++) {
+            for (let c = 0; c < (this.boardType === "Cyton" ? this.ourBoard.numberOfChannels() : this.ourBoard.getNumberOfChannels()); c++) {
                 let calculatedSampleChannel = 0;
                 if (this.thresholdTypes[c] === "average") {
                     for (let i = this.savedSamples.length - 1; i >= Math.max(0, this.savedSamples.length - this.thresholdParameters[c]); i--) calculatedSampleChannel += Math.abs(this.savedSamples[i][c]);
@@ -53,14 +58,59 @@ class MyCyton {
     }
 
     tryConnectBoard() {
-        if (this.ourBoard != null && this.ourBoard.isConnected()) this.ourBoard.disconnect().then(this.tryConnectBoard2.bind(this));
-        else this.tryConnectBoard2();
+        if (this.notTerminated) {
+            if (this.ourBoard != null && this.ourBoard.isConnected()) this.ourBoard.disconnect().then(this.tryConnectBoard2.bind(this));
+            else this.tryConnectBoard2();
+        }
+    }
+
+    disconnectBoard() {
+        if (this.ourBoard != null && this.ourBoard.isConnected()) this.ourBoard.disconnect().then(() => {
+            this.onConnectionStatusChange(0);
+            if (!this.notTerminated) this.ourBoard = null;
+        });
+    }
+
+    terminate() {
+        this.notTerminated = false;
+        this.disconnectBoard();
     }
 
     tryConnectBoard2() {
+
+        const onSample = (sample) => {
+            this.lastSampleTime = Date.now();
+            // console.log(Date.now());
+            /** Work with sample */
+            this.count++;
+            if (Date.now() - this.startCountTime > 1000) {
+                // console.log(this.count);
+                this.count = 0;
+                this.startCountTime = Date.now();
+            }
+            this.mySample = [];
+            for (let i = 0; i < (this.boardType === "Cyton" ? this.ourBoard.numberOfChannels() : this.ourBoard.getNumberOfChannels()); i++) {
+                this.mySample.push(sample.channelData[i]);
+                // console.log("Channel " + (i + 1) + ": " + sample.channelData[i].toFixed(8) + " Volts.");
+                // prints to the console
+                //  "Channel 1: 0.00001987 Volts."
+                //  "Channel 2: 0.00002255 Volts."
+                //  ...
+                //  "Channel 8: -0.00001875 Volts."
+            }
+            this.savedSamples.push(this.mySample);
+            if (Date.now() - this.lastEmitted > 20) this.emitSamples();
+        }
+
         this.savedSamples = [];
-        this.ourBoard = new Cyton({});
-        this.ourBoard.listPorts().then(ports => {
+        switch (this.boardType) {
+            case "Cyton":
+                this.ourBoard = new Cyton({});
+                break;
+            case "WifiCyton":
+                this.ourBoard = new WifiCyton({debug: false, verbose: true, latency: 10000});
+        }
+        if (this.boardType === "Cyton") this.ourBoard.listPorts().then(ports => {
             // console.log(ports);
             this.portNum = null;
             for (let i = 0; i < ports.length; i++) if (ports[i].productId === '6015') {
@@ -79,35 +129,37 @@ class MyCyton {
                 // setTimeout(function () {console.log(this.ourBoard.isStreaming())}.bind(this), 1000);
                 this.count = 0;
                 this.startCountTime = Date.now();
-                this.ourBoard.on('sample', (sample) => {
-                    this.lastSampleTime = Date.now();
-                    // console.log(Date.now());
-                    /** Work with sample */
-                    this.count++;
-                    if (Date.now() - this.startCountTime > 1000) {
-                        // console.log(this.count);
-                        this.count = 0;
-                        this.startCountTime = Date.now();
-                    }
-                    this.mySample = [];
-                    for (let i = 0; i < this.ourBoard.numberOfChannels(); i++) {
-                        this.mySample.push(sample.channelData[i]);
-                        // console.log("Channel " + (i + 1) + ": " + sample.channelData[i].toFixed(8) + " Volts.");
-                        // prints to the console
-                        //  "Channel 1: 0.00001987 Volts."
-                        //  "Channel 2: 0.00002255 Volts."
-                        //  ...
-                        //  "Channel 8: -0.00001875 Volts."
-                    }
-                    this.savedSamples.push(this.mySample);
-                    if (Date.now() - this.lastEmitted > 20) this.emitSamples();
-                });
+                this.ourBoard.on('sample', onSample.bind(this));
             });
             else {
                 console.log('No device found.');
                 this.onConnectionStatusChange(0);
             }
         });
+        else {
+            this.onConnectionStatusChange(1);
+            console.log('Attempting wifi connect...');
+            this.lastSampleTime = Date.now();
+            this.ourBoard.on('sample', onSample.bind(this));
+
+            this.ourBoard.searchToStream({
+                sampleRate: 1000, // Custom sample rate
+                shieldName: this.boardName, // Enter the unique name for your wifi shield
+                streamStart: true // Call to start streaming in this function
+            }).catch((result) => {
+                this.onConnectionStatusChange(0);
+                console.log(result);
+                console.log('caught');
+            }).then(() => {
+                if (this.ourBoard.isConnected()) {
+                    this.onConnectionStatusChange(2);
+                    this.count = 0;
+                    this.startCountTime = Date.now();
+
+                    console.log('Connected!');
+                }
+            });
+        }
     }
 
     attemptConnect(ports, onsuccess) {
@@ -149,16 +201,19 @@ class MyCyton {
     }
 
     checkConnection() {
-        if (Date.now() - this.lastSampleTime > 3000) {
-            console.log('No data is coming! Attempting to reconnect...');
+        if (Date.now() - this.lastSampleTime > (this.boardType === 'WifiCyton' ? 13000 : 3000)) {
+            console.log('No data is coming! Attempting to reconnect ' + this.boardType + '...');
             this.tryConnectBoard();
-            setTimeout(this.checkConnection.bind(this), 5000);
-        } else setTimeout(this.checkConnection.bind(this), 500);
+            // else console.log('This board type doesn\'t allow automatic reconnection!');
+            if (this.notTerminated) setTimeout(this.checkConnection.bind(this), 5000);
+        } else if (this.notTerminated) setTimeout(this.checkConnection.bind(this), 500);
     }
 
-    setThresholdTypes(thresholdTypes, thresholdParameters) {
+    setThresholdTypes(thresholdTypes, thresholdParameters, boardType, boardName) {
         this.thresholdTypes = thresholdTypes;
         this.thresholdParameters = thresholdParameters;
+        this.boardType = boardType;
+        this.boardName = boardName;
     }
 }
 

@@ -9,15 +9,19 @@ let thresholdParameters = null;
 let myCyton = null;
 
 const MyWebServers = require("./mywebserver");
-const myWebServer = new MyWebServers((newThresholds, newActions, newActionTypes, newThresholdTypes, newThresholdParameters) => {
+const myWebServer = new MyWebServers((newThresholds, newActions, newActionTypes, newThresholdTypes, newThresholdParameters, boardType, boardName) => {
     thresholds = newThresholds;
     actions = newActions;
     actionTypes = newActionTypes;
     thresholdTypes = newThresholdTypes;
     thresholdParameters = newThresholdParameters;
-    myCyton.setThresholdTypes(thresholdTypes, thresholdParameters);
+    myCyton.setThresholdTypes(thresholdTypes, thresholdParameters, boardType, boardName);
 }, () => {
     myCyton.tryConnectBoard();
+}, () => {
+    myCyton.disconnectBoard();
+}, () => {
+    myCyton.terminate();
 }, allowSim => {
     myCyton.onAllowSim(allowSim);
 });

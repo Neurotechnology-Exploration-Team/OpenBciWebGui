@@ -5,7 +5,7 @@
 ## Requirements
 
 - The program must be run on a Windows computer. Linux and Mac are untested. Safari will not work because it does not allow unsecure websockets.
-- It is NOT required to install nodejs beforehand. 
+- It is NOT required to install nodejs beforehand. If you wish to work on the project, rebuild, or run in an IDE, keep in mind that you must use Node v9.11.2 and npm v5.6.0. The node is included and used by the bat file to run the program - npm is not included, and you'll have to get it separately from here - use the msi installer for windows - https://nodejs.org/download/release/v9.11.2/ (includes the correct version of both node and npm). 
 - It is recommended that a web browser be installed on the computer, preferably chrome. Other browsers not tested.
 - Only Cyton boards will work - though the program can be used without a board.
 

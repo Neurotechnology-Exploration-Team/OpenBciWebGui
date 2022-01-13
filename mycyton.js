@@ -2,6 +2,8 @@
 
 const Cyton = require('@openbci/cyton'); // requires node <= v9
 const WifiCyton = require('@openbci/wifi');
+const OpenBCIUtilities = require('@openbci/utilities');
+const k = OpenBCIUtilities.constants;
 
 class MyCyton {
     constructor(onConnectionStatusChange, onSample) {
@@ -40,7 +42,7 @@ class MyCyton {
             }
             if (this.savedSamples.length > this.samplesPerAverage) this.savedSamples = this.savedSamples.slice(this.savedSamples.length - this.samplesPerAverage);
             let calculatedSample = [];
-            for (let c = 0; c < (this.boardType === "Cyton" ? this.ourBoard.numberOfChannels() : this.ourBoard.getNumberOfChannels()); c++) {
+            for (let c = 0; c < 8; c++) {
                 let calculatedSampleChannel = 0;
                 if (this.thresholdTypes[c] === "average") {
                     for (let i = this.savedSamples.length - 1; i >= Math.max(0, this.savedSamples.length - this.thresholdParameters[c]); i--) calculatedSampleChannel += Math.abs(this.savedSamples[i][c]);
@@ -67,19 +69,24 @@ class MyCyton {
     disconnectBoard() {
         if (this.ourBoard != null && this.ourBoard.isConnected()) this.ourBoard.disconnect().then(() => {
             this.onConnectionStatusChange(0);
-            if (!this.notTerminated) this.ourBoard = null;
+            if (!this.notTerminated) {
+                this.ourBoard = null;
+            }
         });
+        else this.onConnectionStatusChange(0);
     }
 
     terminate() {
         this.notTerminated = false;
         this.disconnectBoard();
+        setTimeout(process.exit, 5000);
     }
 
     tryConnectBoard2() {
 
         const onSample = (sample) => {
-            this.lastSampleTime = Date.now();
+            // console.log('is this happening?' + Date.now());
+
             // console.log(Date.now());
             /** Work with sample */
             this.count++;
@@ -89,17 +96,20 @@ class MyCyton {
                 this.startCountTime = Date.now();
             }
             this.mySample = [];
-            for (let i = 0; i < (this.boardType === "Cyton" ? this.ourBoard.numberOfChannels() : this.ourBoard.getNumberOfChannels()); i++) {
-                this.mySample.push(sample.channelData[i]);
-                // console.log("Channel " + (i + 1) + ": " + sample.channelData[i].toFixed(8) + " Volts.");
-                // prints to the console
-                //  "Channel 1: 0.00001987 Volts."
-                //  "Channel 2: 0.00002255 Volts."
-                //  ...
-                //  "Channel 8: -0.00001875 Volts."
-            }
-            this.savedSamples.push(this.mySample);
-            if (Date.now() - this.lastEmitted > 20) this.emitSamples();
+            // if (this.ourBoard !== null && this.ourBoard !== undefined) {
+                for (let i = 0; i < 8; i++) {
+                    if (sample.channelData[i] !== 0) this.lastSampleTime = Date.now();
+                    this.mySample.push(sample.channelData[i]);
+                    // console.log("Channel " + (i + 1) + ": " + sample.channelData[i].toFixed(8) + " Volts.");
+                    // prints to the console
+                    //  "Channel 1: 0.00001987 Volts."
+                    //  "Channel 2: 0.00002255 Volts."
+                    //  ...
+                    //  "Channel 8: -0.00001875 Volts."
+                }
+                this.savedSamples.push(this.mySample);
+                if (Date.now() - this.lastEmitted > 20) this.emitSamples();
+            // }
         }
 
         this.savedSamples = [];
@@ -140,7 +150,7 @@ class MyCyton {
             this.onConnectionStatusChange(1);
             console.log('Attempting wifi connect...');
             this.lastSampleTime = Date.now();
-            this.ourBoard.on('sample', onSample.bind(this));
+            this.ourBoard.on(k.OBCIEmitterSample, onSample.bind(this));
 
             this.ourBoard.searchToStream({
                 sampleRate: 1000, // Custom sample rate

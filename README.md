@@ -11,8 +11,7 @@
 
 ## Installation
 
-1. Download the open_bci_web_gui.zip file from the [Releases](https://github.com/MJE10/open_bci_web_gui/releases) page.
-2. Extract the zip.
+1. Clone this repo
 
 ## Usage
 

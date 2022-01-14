@@ -201,6 +201,10 @@ class MyCyton {
                 if (!this.ourBoard.isConnected()) {
                     this.onConnectionStatusChange(0);
                 }
+            }).catch((result) => {
+                this.onConnectionStatusChange(0);
+                console.log(result);
+                console.log('caught');
             });
         }
     }

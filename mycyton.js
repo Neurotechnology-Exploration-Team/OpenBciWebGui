@@ -1,6 +1,7 @@
 // --------------------------------------- Cyton stuff ---------------------------------------
 
 const Cyton = require('@openbci/cyton'); // requires node <= v9
+const Ganglion = require('@openbci/ganglion');
 const WifiCyton = require('@openbci/wifi');
 const OpenBCIUtilities = require('@openbci/utilities');
 const k = OpenBCIUtilities.constants;

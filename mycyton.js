@@ -98,7 +98,9 @@ class MyCyton {
             }
             this.mySample = [];
             // if (this.ourBoard !== null && this.ourBoard !== undefined) {
-                for (let i = 0; i < 8; i++) {
+                let numChannels = 8;
+                if (this.boardType === "Ganglion") numChannels = this.ourBoard.numberOfChannels();
+                for (let i = 0; i < numChannels; i++) {
                     if (sample.channelData[i] !== 0) this.lastSampleTime = Date.now();
                     this.mySample.push(sample.channelData[i]);
                     // console.log("Channel " + (i + 1) + ": " + sample.channelData[i].toFixed(8) + " Volts.");
@@ -120,6 +122,10 @@ class MyCyton {
                 break;
             case "WifiCyton":
                 this.ourBoard = new WifiCyton({debug: false, verbose: true, latency: 10000});
+                break;
+            case "Ganglion":
+                this.ourBoard = new Ganglion();
+                break;
         }
         if (this.boardType === "Cyton") this.ourBoard.listPorts().then(ports => {
             // console.log(ports);
@@ -147,7 +153,7 @@ class MyCyton {
                 this.onConnectionStatusChange(0);
             }
         });
-        else {
+        else if (this.boardType === "WifiCyton") {
             this.onConnectionStatusChange(1);
             console.log('Attempting wifi connect...');
             this.lastSampleTime = Date.now();
@@ -168,6 +174,32 @@ class MyCyton {
                     this.startCountTime = Date.now();
 
                     console.log('Connected!');
+                }
+            });
+        }
+        else if (this.boardType === "Ganglion") {
+            this.onConnectionStatusChange(1);
+            console.log('Attempting Ganglion connect');
+            this.lastSampleTime = Date.now();
+
+            this.ourBoard.once("ganglionFound", peripheral => {
+                this.onConnectionStatusChange(2);
+                this.count = 0;
+                this.startCountTime = Date.now();
+                console.log('Connected!');
+
+                // Stop searching for BLE devices once a ganglion is found.
+                this.ourBoard.searchStop();
+                this.ourBoard.on("sample", onSample.bind(this));
+                this.ourBoard.once("ready", () => {
+                    this.ourBoard.streamStart();
+                });
+                this.ourBoard.connect(peripheral);
+            });
+            // Start scanning for BLE devices
+            this.ourBoard.searchStart().then(() => {
+                if (!this.ourBoard.isConnected()) {
+                    this.onConnectionStatusChange(0);
                 }
             });
         }

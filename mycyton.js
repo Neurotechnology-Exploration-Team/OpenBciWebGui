@@ -3,6 +3,7 @@
 const Cyton = require('@openbci/cyton'); // requires node <= v9
 const Ganglion = require('@openbci/ganglion');
 const WifiCyton = require('@openbci/wifi');
+const WifiGanglion = WifiCyton;
 const OpenBCIUtilities = require('@openbci/utilities');
 const k = OpenBCIUtilities.constants;
 
@@ -121,6 +122,7 @@ class MyCyton {
                 this.ourBoard = new Cyton({});
                 break;
             case "WifiCyton":
+            case "WifiGanglion":
                 this.ourBoard = new WifiCyton({debug: false, verbose: true, latency: 10000});
                 break;
             case "Ganglion":
@@ -153,14 +155,14 @@ class MyCyton {
                 this.onConnectionStatusChange(0);
             }
         });
-        else if (this.boardType === "WifiCyton") {
+        else if (this.boardType === "WifiCyton" || this.boardType === "WifiGanglion") {
             this.onConnectionStatusChange(1);
             console.log('Attempting wifi connect...');
             this.lastSampleTime = Date.now();
             this.ourBoard.on(k.OBCIEmitterSample, onSample.bind(this));
 
             this.ourBoard.searchToStream({
-                sampleRate: 1000, // Custom sample rate
+                sampleRate: (this.boardType === "WifiCyton" ? 1000 : 200), // Custom sample rate
                 shieldName: this.boardName, // Enter the unique name for your wifi shield
                 streamStart: true // Call to start streaming in this function
             }).catch((result) => {
@@ -248,12 +250,12 @@ class MyCyton {
     }
 
     checkConnection() {
-        if (Date.now() - this.lastSampleTime > (this.boardType === 'WifiCyton' ? 13000 : 3000)) {
-            console.log('No data is coming! Attempting to reconnect ' + this.boardType + '...');
-            this.tryConnectBoard();
-            // else console.log('This board type doesn\'t allow automatic reconnection!');
-            if (this.notTerminated) setTimeout(this.checkConnection.bind(this), 5000);
-        } else if (this.notTerminated) setTimeout(this.checkConnection.bind(this), 500);
+        // if (Date.now() - this.lastSampleTime > (this.boardType === 'WifiCyton' || this.boardType === "WifiGanglion" ? 13000 : 3000)) {
+        //     console.log('No data is coming! Attempting to reconnect ' + this.boardType + '...');
+        //     this.tryConnectBoard();
+        //     // else console.log('This board type doesn\'t allow automatic reconnection!');
+        //     if (this.notTerminated) setTimeout(this.checkConnection.bind(this), 5000);
+        // } else if (this.notTerminated) setTimeout(this.checkConnection.bind(this), 500);
     }
 
     setThresholdTypes(thresholdTypes, thresholdParameters, boardType, boardName) {

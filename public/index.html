@@ -69,7 +69,7 @@
         <select id="boardTypeSelect" onchange="changeBoardType()">
             <option value="Cyton">Cyton</option>
             <option value="WifiCyton">Wifi Cyton</option>
-            <option value="Ganglion">Ganglion</option>
+            <option value="WifiGanglion">Wifi Ganglion</option>
         </select><br>
         <input id="boardTypeSelectName" type="text" value="OpenBCI-6D58" onchange="changeBoardType()">
     </div>
@@ -474,11 +474,11 @@ button, .slider {
 
     function changeBoardType() {
         boardType = $("#boardTypeSelect").val();
-        if (boardType === "WifiCyton") {
+        if (boardType === "WifiCyton" || boardType === "WifiGanglion") {
             $("#boardTypeSelectName").show();
             boardName = $("#boardTypeSelectName").val();
         }
-        else ("#boardTypeSelectName").hide();
+        else $("#boardTypeSelectName").hide();
     }
 
     function buildChannelRow(id) {

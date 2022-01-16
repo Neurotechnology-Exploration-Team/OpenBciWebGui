@@ -49,14 +49,14 @@
 
     <div id="settingsPanel">
         <input type="checkbox" id="toggle_advanced" onclick="toggle('advanced')"><h4>Advanced</h4><br>
-        <button onclick="disconnect()">Disconnect Cyton</button><br>
-        <button onclick="reconnect()">Reconnect Cyton</button><br>
-        <button onclick="terminate()">Terminate Program</button><br>
-        <h4>Slider size:</h4><input type="number" id="sliderSizer" value="100" onchange="newSliderWidth()" min="0" style="width: 60px"><br>
-        <h4>Reset slider scales:</h4>
+        <button onclick="disconnect()" class="tooltip">Disconnect Board<span class="tooltiptext">Safely disconnect, or abort attempt to connect, with current board</span></button><br>
+        <button onclick="reconnect()" class="tooltip">Reconnect Board<span class="tooltiptext">Safely disconnect, or abort attempt to connect, with current board, then try to connect again</span></button><br>
+        <button onclick="terminate()" class="tooltip">Terminate Program<span class="tooltiptext">Exit and close program safely</span></button><br>
+        <h4 class="tooltip">Slider size:<span class="tooltiptext">Change the visual size of the slider</span></h4><input type="number" id="sliderSizer" value="100" onchange="newSliderWidth()" min="0" style="width: 60px"><br>
+        <h4 class="tooltip">Reset slider scales:<span class="tooltiptext">Set the maximum voltage value (the value of the far right of the bar) for every channel</span></h4>
         <input id="resetSliderSelect" onchange="resetSliderLimits()" min="0" style="width: 60px" value="0.0001"><br>
-        <h4>Set all action types:</h4><select id="actionTypeGlobal" onchange="newActionTypeGlobal()">
-        <option value='tap'>tap</option>
+        <h4 class="tooltip">Set all action types:<span class="tooltiptext">Set what happens when the threshold is reached, for every channel</span></h4><select id="actionTypeGlobal" onchange="newActionTypeGlobal()">
+        <option value='tap' class="tooltip">tap<span class="tooltiptext">Tap a key - press it down and quickly release it</span></option>
         <option value='toggle'>toggle</option>
         <option value='feather'>feather</option>
     </select><br><h4>Set all threshold types:</h4><select id="thresholdTypeGlobal" onchange="newThresholdTypeGlobal()">
@@ -88,7 +88,7 @@
     border-radius: 5px;
 }
 
-#settingsPanel * {
+#settingsPanel button, #settingsPanel h4, #settingsPanel input {
     display: inline-block;
     margin: 10px;
 }
@@ -241,6 +241,35 @@ button, .slider {
 #boardTypeSelectName {
     display: none;
     text-align: center;
+}
+
+/* Tooltip container */
+.tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+/* Tooltip text */
+.tooltip .tooltiptext {
+    visibility: hidden;
+    width: 120px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    padding: 5px 0;
+    border-radius: 6px;
+
+    /* Position the tooltip text - see examples below! */
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -60px; /* Use half of the width (120/2 = 60), to center the tooltip */
+    z-index: 1;
+}
+
+/* Show the tooltip text when you mouse over the tooltip container */
+.tooltip:hover .tooltiptext {
+    visibility: visible;
 }
 
 </style>

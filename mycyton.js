@@ -1,32 +1,51 @@
 // --------------------------------------- Cyton stuff ---------------------------------------
 
 const Cyton = require('@openbci/cyton'); // requires node <= v9
-const Ganglion = require('@openbci/ganglion');
-const WifiCyton = require('@openbci/wifi');
-const OpenBCIUtilities = require('@openbci/utilities');
+const Ganglion = require('@openbci/ganglion'); // requires node <= v9
+const WifiCyton = require('@openbci/wifi'); // requires node <= v9
+const OpenBCIUtilities = require('@openbci/utilities'); // requires node <= v9
 const k = OpenBCIUtilities.constants;
 
 class MyCyton {
     constructor(onConnectionStatusChange, onSample) {
+        // do this when the connection status (connected vs connecting vs not connected) changes
         this.onConnectionStatusChange = onConnectionStatusChange;
+        // do this when a sample is received; collates samples into groups and averages them first
         this.onSample = onSample;
+
+        // internal, keeps track of the last sample time so that if no data is received the program can
+        // try to reconnect. Obsolete?
         this.timeout = null;
+        // for Cyton bluetooth boards, keeps track of the COM port of the current connection
         this.portNum = null;
 
+        // array where sampled are collected so that a number of them can be averaged
+        // could do with being a ring buffer to save on time complexity
         this.savedSamples = [];
+        // determined by the user, the number of samples from savedSamples that will be averaged to generate
+        // the value used by the key press portion of the program
         this.samplesPerAverage = 500;
-        // this.emitSamples();
+        // we want to make sure we aren't sending an "average of 1" of every single sample, overloading the
+        // front end, so we wait until it has been a certain (small) amount of time from this saved epoch to send new data
         this.lastEmitted = 0;
+        // internal, keeps track of the last sample time so that if no data is received the program can
+        // try to reconnect
         this.lastSampleTime = 0;
 
+        // controlled by user, monitored by all infinite loops so that program can exit as cleanly as possible
         this.notTerminated = true;
 
+        // controlled by user; in the absence of the specified board type, should the program use simulated data?
         this.allowSim = false;
+        // the user's desired board type
         this.boardType = "Cyton";
+        // if a wifi board, the name of the user's board (required for connection)
         this.boardName = "OpenBCI-6D58"
+        // the thresholds, as determined by the user
         this.thresholdTypes = null;
         this.thresholdParameters = null;
 
+        // start checking for lack of data from the board - will trigger the first attempt to connect
         this.checkConnection();
     }
 

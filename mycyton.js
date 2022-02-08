@@ -172,13 +172,7 @@ class MyCyton {
             // uncomment below to see if samples are coming/board is connected properly
             // console.log(Date.now());
             /** Work with sample */
-            // I have no idea what this is counting - I believe it is a deprecated way of ensuring the board is
-            // connected. The problem with this method is that the program may be receiving simple samples of all zeros.
-            // connectivity is currently tracked with this.lastSampleTime, which will only update on nonzero simple samples.
-            this.count++;
             if (Date.now() - this.startCountTime > 1000) {
-                // console.log(this.count);
-                this.count = 0;
                 this.startCountTime = Date.now();
             }
             // we are only going to collect the values we care about into this list - the board may also supply
@@ -247,7 +241,6 @@ class MyCyton {
                 // I believe this is the equivalent of 'start data stream' in the OpenBCI GUI
                 this.ourBoard.streamStart();
                 // setTimeout(function () {console.log(this.ourBoard.isStreaming())}.bind(this), 1000);
-                this.count = 0;
                 this.startCountTime = Date.now();
                 this.ourBoard.on('sample', onSample.bind(this));
             });
@@ -277,7 +270,6 @@ class MyCyton {
                 // on success (usually)
                 if (this.ourBoard.isConnected()) {
                     this.onConnectionStatusChange(2);
-                    this.count = 0;
                     this.startCountTime = Date.now();
 
                     console.log('Connected!');
@@ -294,7 +286,6 @@ class MyCyton {
             // recognize the ganglion dongle
             this.ourBoard.once("ganglionFound", peripheral => {
                 this.onConnectionStatusChange(2);
-                this.count = 0;
                 this.startCountTime = Date.now();
                 console.log('Connected!');
 

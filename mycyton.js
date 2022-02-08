@@ -103,7 +103,7 @@ class MyCyton {
             }
             calculatedSample.push(calculatedSampleChannel.toFixed(8));
         }
-        
+
         // send samples to the web server
         this.onSample(calculatedSample);
     }
@@ -173,30 +173,21 @@ class MyCyton {
             // we are only going to collect the values we care about into this list - the board may also supply
             // other values such as accelerometer data; parsing these helps lighten the size of the arrays
             this.mySample = [];
-            // board will always be defined, because the board calls this function
-            // if (this.ourBoard !== null && this.ourBoard !== undefined) {
-                // determine the number of channels depending on the device we are using
-                let numChannels = 8;
-                if (this.boardType === "Ganglion") numChannels = this.ourBoard.numberOfChannels();
-                // for each channel
-                for (let i = 0; i < numChannels; i++) {
-                    // if nonzero, then remember that connectivity is good
-                    if (sample.channelData[i] !== 0) this.lastSampleTime = Date.now();
-                    this.mySample.push(sample.channelData[i]);
-                    // console.log("Channel " + (i + 1) + ": " + sample.channelData[i].toFixed(8) + " Volts.");
-                    // prints to the console
-                    //  "Channel 1: 0.00001987 Volts."
-                    //  "Channel 2: 0.00002255 Volts."
-                    //  ...
-                    //  "Channel 8: -0.00001875 Volts."
-                }
-                // add the simple sample to the class array
-                this.savedSamples.push(this.mySample);
-                // emit samples if we didn't JUST do so; data comes in batches of large numbers of simple samples,
-                // so onSample is called many times in succession, so we should introduce delay between evaluating
-                // averages
-                if (Date.now() - this.lastEmitted > 20) this.emitSamples();
-            // }
+            // determine the number of channels depending on the device we are using
+            let numChannels = 8;
+            if (this.boardType === "Ganglion") numChannels = this.ourBoard.numberOfChannels();
+            // for each channel
+            for (let i = 0; i < numChannels; i++) {
+                // if nonzero, then remember that connectivity is good
+                if (sample.channelData[i] !== 0) this.lastSampleTime = Date.now();
+                this.mySample.push(sample.channelData[i]);
+            }
+            // add the simple sample to the class array
+            this.savedSamples.push(this.mySample);
+            // emit samples if we didn't JUST do so; data comes in batches of large numbers of simple samples,
+            // so onSample is called many times in succession, so we should introduce delay between evaluating
+            // averages
+            if (Date.now() - this.lastEmitted > 20) this.emitSamples();
         }
 
         // we are reconnecting the board - erase samples from previous connections

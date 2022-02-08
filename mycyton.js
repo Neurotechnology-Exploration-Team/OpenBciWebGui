@@ -21,9 +21,6 @@ class MyCyton {
         // do this when a sample is received; collates simple samples into groups and averages them first
         this.onSample = onSample;
 
-        // for Cyton bluetooth boards, keeps track of the COM port of the current connection
-        this.portNum = null;
-
         // array where simple samples are collected so that a number of them can be averaged
         // could do with being a ring buffer to save on time complexity
         this.savedSamples = [];
@@ -207,28 +204,40 @@ class MyCyton {
         // initialize the board in different ways depending on which board the user wants to use
         if (this.boardType === "Cyton") this.ourBoard.listPorts().then(ports => {
             // console.log(ports);
-            this.portNum = null;
+            let portNum = null;
             // look for cyton product id 6015 in the COM port description; this guess has always been correct,
             // though I would love for it to be changeable from the GUI
             for (let i = 0; i < ports.length; i++) if (ports[i].productId === '6015') {
-                this.portNum = i;
+                portNum = i;
                 console.log('I think the board is on port ' + i);
             }
             // if we can't find an appropriate port, but the user has allowed the simulator, use the sim
-            if (this.portNum == null && this.allowSim) for (let i = 0; i < ports.length; i++) if (ports[i].comName === 'OpenBCISimulator') {
-                this.portNum = i;
+            if (portNum == null && this.allowSim) for (let i = 0; i < ports.length; i++) if (ports[i].comName === 'OpenBCISimulator') {
+                portNum = i;
                 console.log('Using simulator on port ' + i);
             }
             // if a suitable device has been found, attempt connection via library function
-            if (this.portNum != null) this.attemptConnect(ports, () => {
-                // on success
-                console.log('Connected!');
+            if (portNum != null) {
+                this.onConnectionStatusChange(1);
+                this.ourBoard = new Cyton({});
+                this.ourBoard.connect(ports[portNum].comName) // Port name is a serial port name, see `.listPorts()`
+                    .then(() => {
+                        // on success
+                        this.onConnectionStatusChange(2);
+                        console.log('Connected!');
 
-                // I believe this is the equivalent of 'start data stream' in the OpenBCI GUI
-                this.ourBoard.streamStart();
-                this.startCountTime = Date.now();
-                this.ourBoard.on('sample', onSample.bind(this));
-            });
+                        // I believe this is the equivalent of 'start data stream' in the OpenBCI GUI
+                        this.ourBoard.streamStart();
+                        this.startCountTime = Date.now();
+                        this.ourBoard.on('sample', onSample.bind(this));
+                    })
+                    .catch(err => {
+                        console.log('Caught error connecting: ' + err + '; this usually means there is no device on this port.');
+
+                        console.log('No device found.');
+                        this.onConnectionStatusChange(0);
+                    });
+            }
             else {
                 // if no suitable device was found
                 console.log('No device found.');
@@ -293,30 +302,6 @@ class MyCyton {
                 console.log('caught');
             });
         }
-    }
-
-    /**
-     * Function: attemptConnect
-     * ------------------------
-     * Attempt to connect to a Cyton bluetooth board
-     *
-     * @param ports      a list of COM ports
-     * @param onsuccess  a function to execute if successfully connects
-     */
-    attemptConnect(ports, onsuccess) {
-        this.onConnectionStatusChange(1);
-        this.ourBoard = new Cyton({});
-        this.ourBoard.connect(ports[this.portNum].comName) // Port name is a serial port name, see `.listPorts()`
-            .then(() => {
-                this.onConnectionStatusChange(2);
-                onsuccess();
-            })
-            .catch(err => {
-                console.log('Caught error connecting: ' + err + '; this usually means there is no device on this port.');
-
-                console.log('No device found.');
-                this.onConnectionStatusChange(0);
-            });
     }
 
     // called when the user clicks or unclicks the 'allow simulator' checkbox in the GUI

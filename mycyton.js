@@ -71,41 +71,41 @@ class MyCyton {
     emitSamples() {
         // remember when this was called so that we don't send data too often overloading the front end
         this.lastEmitted = Date.now();
-        // guaranteed true because the function is called after simple samples are received - not guaranteed if called
-        // in an endless loop
-        if (this.savedSamples.length > 0) {
-            // if the thresholds have not been explicitly set by the user, initialize some defaults
-            if (this.thresholdTypes == null) {
-                this.thresholdTypes = [];
-                this.thresholdParameters = [];
-                for (let i = 0; i < this.savedSamples[0].length; i++) {
-                    // these are the same values that are the defaults in the front-end GUI,
-                    // but they are not explicitly synchronized when the program starts
-                    this.thresholdTypes.push("average");
-                    this.thresholdParameters.push(500);
-                }
+
+        // if the thresholds have not been explicitly set by the user, initialize some defaults
+        if (this.thresholdTypes == null) {
+            this.thresholdTypes = [];
+            this.thresholdParameters = [];
+            for (let i = 0; i < this.savedSamples[0].length; i++) {
+                // these are the same values that are the defaults in the front-end GUI,
+                // but they are not explicitly synchronized when the program starts
+                this.thresholdTypes.push("average");
+                this.thresholdParameters.push(500);
             }
-            // we only want to keep a (constant) finite number of simple samples so that we don't run out of memory
-            if (this.savedSamples.length > this.samplesPerAverage) this.savedSamples = this.savedSamples.slice(this.savedSamples.length - this.samplesPerAverage);
-            let calculatedSample = [];
-            for (let c = 0; c < 8; c++) {
-                let calculatedSampleChannel = 0;
-                if (this.thresholdTypes[c] === "average") {
-                    // "average": take the absolute mean of the last n simple samples
-                    for (let i = this.savedSamples.length - 1; i >= Math.max(0, this.savedSamples.length - this.thresholdParameters[c]); i--) calculatedSampleChannel += Math.abs(this.savedSamples[i][c]);
-                    calculatedSampleChannel /= Math.min(this.savedSamples.length, this.thresholdParameters[c]);
-                } else if (this.thresholdTypes[c] === "max") {
-                    // "max": take the absolute maximum value of the last n simple samples
-                    for (let i = this.savedSamples.length - 1; i >= Math.max(0, this.savedSamples.length - this.thresholdParameters[c]); i--) calculatedSampleChannel = Math.max(calculatedSampleChannel, Math.abs(this.savedSamples[i][c]));
-                } else if (this.thresholdTypes[c] === "last") {
-                    // "last": take the most recent simple sample
-                    calculatedSampleChannel += Math.abs(this.savedSamples[this.savedSamples.length - 1][c]);
-                }
-                calculatedSample.push(calculatedSampleChannel.toFixed(8));
-            }
-            // send samples to the web server
-            this.onSample(calculatedSample);
         }
+
+        // we only want to keep a (constant) finite number of simple samples so that we don't run out of memory
+        if (this.savedSamples.length > this.samplesPerAverage) this.savedSamples = this.savedSamples.slice(this.savedSamples.length - this.samplesPerAverage);
+
+        let calculatedSample = [];
+        for (let c = 0; c < 8; c++) {
+            let calculatedSampleChannel = 0;
+            if (this.thresholdTypes[c] === "average") {
+                // "average": take the absolute mean of the last n simple samples
+                for (let i = this.savedSamples.length - 1; i >= Math.max(0, this.savedSamples.length - this.thresholdParameters[c]); i--) calculatedSampleChannel += Math.abs(this.savedSamples[i][c]);
+                calculatedSampleChannel /= Math.min(this.savedSamples.length, this.thresholdParameters[c]);
+            } else if (this.thresholdTypes[c] === "max") {
+                // "max": take the absolute maximum value of the last n simple samples
+                for (let i = this.savedSamples.length - 1; i >= Math.max(0, this.savedSamples.length - this.thresholdParameters[c]); i--) calculatedSampleChannel = Math.max(calculatedSampleChannel, Math.abs(this.savedSamples[i][c]));
+            } else if (this.thresholdTypes[c] === "last") {
+                // "last": take the most recent simple sample
+                calculatedSampleChannel += Math.abs(this.savedSamples[this.savedSamples.length - 1][c]);
+            }
+            calculatedSample.push(calculatedSampleChannel.toFixed(8));
+        }
+        
+        // send samples to the web server
+        this.onSample(calculatedSample);
     }
 
     /**

@@ -21,9 +21,6 @@ class MyCyton {
         // do this when a sample is received; collates simple samples into groups and averages them first
         this.onSample = onSample;
 
-        // internal, keeps track of the last sample time so that if no data is received the program can
-        // try to reconnect. Obsolete?
-        this.timeout = null;
         // for Cyton bluetooth boards, keeps track of the COM port of the current connection
         this.portNum = null;
 
@@ -323,34 +320,15 @@ class MyCyton {
         this.ourBoard = new Cyton({});
         this.ourBoard.connect(ports[this.portNum].comName) // Port name is a serial port name, see `.listPorts()`
             .then(() => {
-                this.timeout = null;
                 this.onConnectionStatusChange(2);
                 onsuccess();
             })
             .catch(err => {
-                this.timeout = null;
-                console.log('Caught error connecting: ' + err + '; this usually means there is no device on this port, please wait.');
-                // if (this.portNum + 1 < ports.length) {
-                //     this.portNum++;
-                //     console.log('Attempting next port... ' + ports[this.portNum].comName);
-                //     this.timeout = this.portNum;
-                //     setTimeout(this.checkTimeout.bind(this), 10000, this.portNum, function () {
-                //         console.log('Timeout on port ' + ports[this.portNum].comName);
-                //         this.portNum++;
-                //         this.attemptConnect(ports, onsuccess);
-                //     }.bind(this));
-                //     setTimeout(this.attemptConnect.bind(this), 1000, ports, onsuccess);
-                // }
-                // else {
-                    console.log('No device found.');
-                    this.onConnectionStatusChange(0);
-                // }
-            });
-    }
+                console.log('Caught error connecting: ' + err + '; this usually means there is no device on this port.');
 
-    // deprecated method of checking for connectivity
-    checkTimeout(badValue, onBadTimeout) {
-        if (this.timeout === badValue) onBadTimeout();
+                console.log('No device found.');
+                this.onConnectionStatusChange(0);
+            });
     }
 
     // called when the user clicks or unclicks the 'allow simulator' checkbox in the GUI

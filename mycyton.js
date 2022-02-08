@@ -226,7 +226,6 @@ class MyCyton {
 
                 // I believe this is the equivalent of 'start data stream' in the OpenBCI GUI
                 this.ourBoard.streamStart();
-                // setTimeout(function () {console.log(this.ourBoard.isStreaming())}.bind(this), 1000);
                 this.startCountTime = Date.now();
                 this.ourBoard.on('sample', onSample.bind(this));
             });

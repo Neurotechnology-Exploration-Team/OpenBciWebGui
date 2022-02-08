@@ -40,7 +40,6 @@ class MyWebServers {
 
         // when the GUI tries to connect to the server
         this.wss.on('connection', function connection(ws) {
-            // console.log('socket connected');
             // remember the websocket object so that it can be sent messages later
             this.ws = ws;
             // send the current status of the board

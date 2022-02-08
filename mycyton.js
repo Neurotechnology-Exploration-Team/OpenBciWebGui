@@ -106,8 +106,6 @@ class MyCyton {
             // send samples to the web server
             this.onSample(calculatedSample);
         }
-        // deprecated, the function is now called when simple samples are received instead of in an infinite loop
-        // setTimeout(this.emitSamples.bind(this), 50);
     }
 
     /**

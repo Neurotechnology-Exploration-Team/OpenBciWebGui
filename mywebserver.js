@@ -45,8 +45,6 @@ class MyWebServers {
             this.ws = ws;
             // send the current status of the board
             this.ws.send(JSON.stringify(this.currentStatus));
-            // deprecated way of repeatedly sending status - we now do it as data comes
-            this.refreshClient(true);
             // when we receive a message from the client
             this.ws.on('message', function incoming(message) {
                 try {
@@ -108,18 +106,6 @@ class MyWebServers {
         this.currentStatus['sample'] = sample;
         // could this result in an error if no client is connected??
         this.ws.send(JSON.stringify(this.currentStatus));
-    }
-
-    /**
-     * Function: refreshClient
-     * -----------------------
-     * Deprecated; repeatedly (or once) send samples to the client
-     *
-     * @param repeat  whether or not to call this function again soon
-     */
-    refreshClient(repeat) {
-        // if (this.ws != null)
-        // if (repeat) setTimeout(this.refreshClient.bind(this), 50, repeat);
     }
 }
 

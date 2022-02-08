@@ -149,17 +149,17 @@ class MyCyton {
         // if the user isn't trying to end the program
         if (this.notTerminated) {
             // make sure board is disconnected before replacing the object, otherwise causes hardware errors
-            if (this.ourBoard != null && this.ourBoard.isConnected()) this.ourBoard.disconnect().then(this.tryConnectBoard2.bind(this));
-            else this.tryConnectBoard2();
+            if (this.ourBoard != null && this.ourBoard.isConnected()) this.ourBoard.disconnect().then(this._tryConnectBoard.bind(this));
+            else this._tryConnectBoard();
         }
     }
 
     /**
-     * Function: tryConnectBoard2
+     * Function: _tryConnectBoard
      * --------------------------
      * Private helper function - attempt to connect the board according to the current settings
      */
-    tryConnectBoard2() {
+    _tryConnectBoard() {
 
         // define the onSample function that will be called when the board generates a simple sample
         // this is the same for all board types (at least so far)

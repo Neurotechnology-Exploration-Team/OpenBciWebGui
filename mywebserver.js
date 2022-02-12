@@ -103,8 +103,8 @@ class MyWebServers {
      */
     onSample(sample) {
         this.currentStatus['sample'] = sample;
-        // could this result in an error if no client is connected??
-        this.ws.send(JSON.stringify(this.currentStatus));
+        // this might happen before a client is connected
+        if (this.ws !== null) this.ws.send(JSON.stringify(this.currentStatus));
     }
 }
 

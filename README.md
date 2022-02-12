@@ -11,7 +11,7 @@
 
 ## Installation
 
-- Clone this repo or download and extract the zip
+- Clone this repo, or download and extract the zip from Github (there is no longer a separate release zip file)
 
 ## Usage
 

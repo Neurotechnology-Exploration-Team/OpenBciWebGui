@@ -10,7 +10,10 @@
 </head>
 <body>
 
-<div id="topBar">
+<div id="topBar" class="tooltip">
+    <span class="tooltiptext">
+        Show or hide sections
+    </span>
     <button onclick="$('#indicatorPanel').toggle();">Indicators</button>
     <button onclick="$('#channelTable').toggle();">Channels</button>
     <button onclick="$('#settingsPanel').toggle();">Settings</button>
@@ -20,7 +23,23 @@
     <div id="indicatorPanel"></div>
 
     <table id="channelTable">
-        <tr><td><h2>Channel</h2></td><td><h2>Threshold</h2></td><td><h2>Action</h2></td><td><h2>Action Type</h2></td><td><h2>Threshold Type</h2></td><td><h2>Threshold Type Parameter</h2></td></tr>
+        <tr><td><h2>Channel</h2></td>
+            <td><h2 class="tooltip">Threshold<span class="tooltiptext">Shows the current input in black and the threshold in green</span></h2></td>
+            <td><h2 class="tooltip">Action<span class="tooltiptext">Choose which key to press when the threshold is reached</span></h2></td>
+            <td><h2 class="tooltip">Action Type<span class="tooltiptext">Set what happens when the threshold is reached
+                <br><br>Tap a key - press it down and quickly release it
+                <br><br>Toggle a key - press it down when the input exceeds the threshold, release when input falls below threshold
+                <br><br>Feather a key - press and release several times per second while input is above threshold</span></h2></td>
+            <td><h2 class="tooltip">Threshold Type<span class="tooltiptext">Set how threshold is measured
+                <br><br>Average - take the absolute average of the past [parameter] voltage readings
+                <br><br>Max - use the absolute maximum of the past [parameter] voltage readings
+                <br><br>Last - use the absolute value of the last voltage reading</span></h2></td>
+            <td><h2 class="tooltip">Threshold Type Parameter<span class="tooltiptext">
+                Set how many values are used to calculate the input
+                <br><br>More values is more stable, but higher latency
+                <br><br>Less values is more fluctuating, but lower latency
+            </span></h2></td>
+        </tr>
 <!--        <tr id="channel0"><td><h3>0</h3></td><td>-->
 <!--            <div class="sliderDiv">-->
 <!--                <button onclick="decreaseGraphSize(0)">-</button>-->
@@ -49,24 +68,42 @@
 
     <div id="settingsPanel">
         <input type="checkbox" id="toggle_advanced" onclick="toggle('advanced')"><h4>Advanced</h4><br>
-        <button onclick="disconnect()">Disconnect Cyton</button><br>
-        <button onclick="reconnect()">Reconnect Cyton</button><br>
-        <button onclick="terminate()">Terminate Program</button><br>
-        <h4>Slider size:</h4><input type="number" id="sliderSizer" value="100" onchange="newSliderWidth()" min="0" style="width: 60px"><br>
-        <h4>Reset slider scales:</h4>
+        <input type="checkbox" id="toggle_tooltips" onclick="toggle('tooltips')" checked><h4>Tooltips</h4><br>
+        <button onclick="disconnect()" class="tooltip">Disconnect Board<span class="tooltiptext">Safely disconnect, or abort attempt to connect, with current board</span></button><br>
+        <button onclick="reconnect()" class="tooltip">Reconnect Board<span class="tooltiptext">Safely disconnect, or abort attempt to connect, with current board, then try to connect again</span></button><br>
+        <button onclick="terminate()" class="tooltip">Terminate Program<span class="tooltiptext">Exit and close program safely</span></button><br>
+        <h4 class="tooltip">Slider size:<span class="tooltiptext">Change the visual size of the slider</span></h4><input type="number" id="sliderSizer" value="100" onchange="newSliderWidth()" min="0" style="width: 60px"><br>
+        <h4 class="tooltip">Reset slider scales:<span class="tooltiptext">Set the maximum voltage value (the value of the far right of the bar) for every channel</span></h4>
         <input id="resetSliderSelect" onchange="resetSliderLimits()" min="0" style="width: 60px" value="0.0001"><br>
-        <h4>Set all action types:</h4><select id="actionTypeGlobal" onchange="newActionTypeGlobal()">
+        <h4 class="tooltip">Set all action types:<span class="tooltiptext">Set what happens when the threshold is reached, for every channel
+            <br><br>Tap a key - press it down and quickly release it
+            <br><br>Toggle a key - press it down when the input exceeds the threshold, release when input falls below threshold
+            <br><br>Feather a key - press and release several times per second while input is above threshold</span></h4>
+        <select id="actionTypeGlobal" onchange="newActionTypeGlobal()">
         <option value='tap'>tap</option>
         <option value='toggle'>toggle</option>
         <option value='feather'>feather</option>
-    </select><br><h4>Set all threshold types:</h4><select id="thresholdTypeGlobal" onchange="newThresholdTypeGlobal()">
+    </select><br><h4 class="tooltip">Set all threshold types:<span class="tooltiptext">Set how threshold is measured, for every channel
+            <br><br>Average - take the absolute average of the past [parameter] voltage readings
+            <br><br>Max - use the absolute maximum of the past [parameter] voltage readings
+            <br><br>Last - use the absolute value of the last voltage reading</span></h4>
+        <select id="thresholdTypeGlobal" onchange="newThresholdTypeGlobal()">
         <option value='average' selected>Average</option>
        <option value='max'>Max</option>
        <option value='last'>Last</option>
     </select><br>
-        <h4>Set all threshold parameters:</h4><input type="number" id="thresholdParameterGlobal" value="500" onchange="newParameterGlobal()" min="0" max="1000" style="width: 60px"><br>
-        <input type="checkbox" id="toggle_allowSim" onclick="toggle('allowSim')"><h4>Allow Simulator</h4><br>
-        <select id="boardTypeSelect" onchange="changeBoardType()">
+        <h4 class="tooltip">Set all threshold parameters:<span class="tooltiptext">
+            Set how many values are used to calculate the input
+            <br><br>More values is more stable, but higher latency
+            <br><br>Less values is more fluctuating, but lower latency
+        </span></h4><input type="number" id="thresholdParameterGlobal" value="500" onchange="newParameterGlobal()" min="0" max="1000" style="width: 60px"><br>
+        <input type="checkbox" id="toggle_allowSim" onclick="toggle('allowSim')"><h4 class="tooltip">Allow Simulator<span class="tooltiptext">
+            If no boards can be found, use simulated data
+        </span></h4><br>
+        <select id="boardTypeSelect" onchange="changeBoardType()" class="tooltip">
+            <span class="tooltiptext">
+                Set the board type
+            </span>
             <option value="Cyton">Cyton</option>
             <option value="WifiCyton">Wifi Cyton</option>
             <option value="WifiGanglion">Wifi Ganglion</option>
@@ -88,7 +125,7 @@
     border-radius: 5px;
 }
 
-#settingsPanel * {
+#settingsPanel button, #settingsPanel h4, #settingsPanel input {
     display: inline-block;
     margin: 10px;
 }
@@ -243,6 +280,36 @@ button, .slider {
     text-align: center;
 }
 
+/* Tooltip container */
+.tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+/* Tooltip text */
+.tooltip .tooltiptext {
+    visibility: hidden;
+    width: 120px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    padding: 5px 0;
+    border-radius: 6px;
+
+    /* Position the tooltip text - see examples below! */
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -60px; /* Use half of the width (120/2 = 60), to center the tooltip */
+    z-index: 100;
+    font-size: small;
+}
+
+/* Show the tooltip text when you mouse over the tooltip container */
+.tooltip:hover .tooltiptext {
+    visibility: visible;
+}
+
 </style>
 <script>
 
@@ -389,6 +456,12 @@ button, .slider {
             } else {
                 socket.send(JSON.stringify({'allowSim': false}));
             }
+        } else if (x === "tooltips") {
+            if ($("#toggle_"+x).is(":checked")) {
+                $(".tooltiptext").show()
+            } else {
+                $(".tooltiptext").hide();
+            }
         }
     }
 
@@ -500,18 +573,24 @@ button, .slider {
             "        </select>";
         let s = "<tr class=\"channelRow\" id=\"channel"+id+"\"><td><h3>"+id+"</h3></td><td>\n" +
             "            <div class=\"sliderDiv\">\n" +
-            "                <button onclick=\"decreaseGraphSize("+id+")\">-</button>\n" +
+            "                <button onclick=\"increaseGraphSize("+id+")\" class='tooltip'>-<span class=\"tooltiptext\">\n" +
+            "            Decrease size of input bar, use especially if the bar is maxing out/all black" +
+            "        </span></button>\n" +
             "                <div id='slider"+id+"' class=\"slider\">\n" +
             "                    <div class=\"sliderGraph\"></div>\n" +
             "                    <div class=\"sliderMarker\"></div>\n" +
             "                </div>\n" +
-            "                <button onclick=\"increaseGraphSize("+id+")\">+</button>\n" +
+            "                <button onclick=\"decreaseGraphSize("+id+")\" class='tooltip'>+<span class=\"tooltiptext\">\n" +
+            "            Increase size of input bar, use especially if the bar is not visible/all white" +
+            "        </span></button>\n" +
             "            </div>\n" +
             "            <div class=\"advancedData\">\n" +
             "                <p class=\"avg\">Loading...</p><br>\n" +
             "                <p class=\"threshold\">Threshold: 0</p><br>\n" +
             "                <p class=\"graphLimit\">Limit: 0.0001</p><br>\n" +
-            "                <p style='margin-right: 0.5em'>Reset scale: </p>" + selectScale + "\n" +
+            "                <p style='margin-right: 0.5em' class='tooltip'>Reset scale: <span class=\"tooltiptext\">\n" +
+            "            Set the maximum voltage value shown in the graph\n" +
+            "        </span></p>" + selectScale + "\n" +
             "            </div>\n" +
             "        </td><td>\n" +
             "            <label>\n" +

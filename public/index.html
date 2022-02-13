@@ -387,7 +387,7 @@ button, .slider {
                 for (let i = 0; i < data['sample'].length; i++) {
                     // s += "<tr><td>" + i + "</td><td class='channel_value'>" + data['sample'][i] + "</td><td><div class='indicatorLight' id='indicatorLightChannel"+i+"' style='background-color: "+(data['sample'][i] > parseFloat($("#thresholdChooser").val()) ? "green" : "red")+"'></div></td><td><input type='number' value='" + $("#thresholdChooser").val() + "'></td></tr>"
                     $("#channel" + i + " .sliderGraph").css("width", ((data['sample'][i]/graphLimits[i])*sliderSize) + "px");
-                    $("#channel" + i + " .advancedData .avg").text("Ao500: " + data['sample'][i]);
+                    $("#channel" + i + " .advancedData .avg").text(thresholdTypes[i] + " of " + thresholdParameters[i] + ": " + data['sample'][i]);
                 }
                 // s += "</table>";
                 // $("#sampleTable").remove();

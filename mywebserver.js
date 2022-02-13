@@ -85,10 +85,12 @@ class MyWebServers {
      * @param status  The new connection status
      */
     connectionStatusUpdate(status) {
-        this.currentStatus["indicators"].deviceConnectionStatus.status = status;
-        // don't push updates to a null client
-        if (this.ws != null) {
-            this.ws.send(JSON.stringify(this.currentStatus));
+        if (status !== this.currentStatus["indicators"].deviceConnectionStatus.status) {
+            this.currentStatus["indicators"].deviceConnectionStatus.status = status;
+            // don't push updates to a null client
+            if (this.ws != null) {
+                this.ws.send(JSON.stringify(this.currentStatus));
+            }
         }
     }
 

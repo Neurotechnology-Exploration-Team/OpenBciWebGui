@@ -176,7 +176,10 @@ class MyCyton {
             // for each channel
             for (let i = 0; i < numChannels; i++) {
                 // if nonzero, then remember that connectivity is good
-                if (sample.channelData[i] !== 0) this.lastSampleTime = Date.now();
+                if (sample.channelData[i] !== 0) {
+                    this.lastSampleTime = Date.now();
+                    this.onConnectionStatusChange(2);
+                }
                 this.mySample.push(sample.channelData[i]);
             }
             // add the simple sample to the class array
@@ -223,7 +226,6 @@ class MyCyton {
                 this.ourBoard.connect(ports[portNum].comName) // Port name is a serial port name, see `.listPorts()`
                     .then(() => {
                         // on success
-                        this.onConnectionStatusChange(2);
                         console.log('Connected!');
 
                         // I believe this is the equivalent of 'start data stream' in the OpenBCI GUI
@@ -263,7 +265,6 @@ class MyCyton {
             }).then(() => {
                 // on success (usually)
                 if (this.ourBoard.isConnected()) {
-                    this.onConnectionStatusChange(2);
                     this.startCountTime = Date.now();
 
                     console.log('Connected!');
@@ -318,11 +319,14 @@ class MyCyton {
         // if it has been too long
         if (Date.now() - this.lastSampleTime > (this.boardType === 'WifiCyton' ? 13000 : 3000)) {
             console.log('No data is coming! Attempting to reconnect ' + this.boardType + '...');
+            this.onConnectionStatusChange(0);
             // try to reconnect
-            this.tryConnectBoard();
+            if (this.notTerminated) setTimeout(this.tryConnectBoard.bind(this), 2000);
             // check again after giving some time to try reconnecting
-            if (this.notTerminated) setTimeout(this.checkConnection.bind(this), 5000);
-        } else if (this.notTerminated) setTimeout(this.checkConnection.bind(this), 500);
+            if (this.notTerminated) setTimeout(this.checkConnection.bind(this), 7000);
+        } else if (this.notTerminated) {
+            setTimeout(this.checkConnection.bind(this), 500);
+        }
     }
 
     /**

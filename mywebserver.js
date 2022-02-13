@@ -85,11 +85,9 @@ class MyWebServers {
      * @param status  The new connection status
      */
     connectionStatusUpdate(status) {
-        // wait until there is a valid client; WHY ARE WE DOING THIS???
-        if (this.ws == null) setTimeout(this.connectionStatusUpdate.bind(this), 100, status);
-        else {
-            // update the indicator object and send to client
-            this.currentStatus["indicators"].deviceConnectionStatus.status = status;
+        this.currentStatus["indicators"].deviceConnectionStatus.status = status;
+        // don't push updates to a null client
+        if (this.ws != null) {
             this.ws.send(JSON.stringify(this.currentStatus));
         }
     }

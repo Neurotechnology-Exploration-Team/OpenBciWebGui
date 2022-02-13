@@ -556,6 +556,16 @@ button, .slider {
             boardName = $("#boardTypeSelectName").val();
         }
         else $("#boardTypeSelectName").hide();
+
+        socket.send(JSON.stringify({
+            thresholds: thresholds,
+            actions: actions,
+            actionTypes: actionTypes,
+            thresholdTypes: thresholdTypes,
+            thresholdParameters: thresholdParameters,
+            boardType: boardType,
+            boardName: boardName
+        }));
     }
 
     function buildChannelRow(id) {

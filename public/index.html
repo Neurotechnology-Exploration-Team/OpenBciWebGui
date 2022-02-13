@@ -546,6 +546,11 @@ button, .slider {
 
     function changeBoardType() {
         boardType = $("#boardTypeSelect").val();
+
+        indicators.deviceConnectionStatus.messages =
+            [boardType + " Not Connected", "Attempting " + boardType + " Connection...", boardType + " Connected"];
+        this.updateIndicators(false);
+
         if (boardType === "WifiCyton") {
             $("#boardTypeSelectName").show();
             boardName = $("#boardTypeSelectName").val();

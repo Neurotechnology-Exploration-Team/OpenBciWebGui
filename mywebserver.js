@@ -73,7 +73,7 @@ class MyWebServers {
 
         this.expressServer = this.app.listen(this.port, () => {
             console.log(`Example app listening at http://localhost:${this.port}`);
-            open(`http://localhost:${this.port}`);
+            // open(`http://localhost:${this.port}`);
         });
     }
 

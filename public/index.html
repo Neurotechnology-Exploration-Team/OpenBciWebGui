@@ -11,41 +11,99 @@
     <script src="./bootstrap.bundle.min.js"></script>
 <!--    <script src="./popper.min.js"></script>-->
 <!--    <script src="./bootstrap.min.js"></script>-->
+    <script src="./chart.js"></script>
     <link href="./index.css" rel="stylesheet">
+    <script src="./global.js"></script>
 </head>
 <body class="bg-dark">
 
 <div class="container">
-    <nav class="navbar navbar-expand-lg">
-        <div class="container-fluid">
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item">
-                        <a class="nav-link active text-light" aria-current="page" href="#">Home</a>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle text-light" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Wifi Cyton
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#">Bluetooth Cyton</a></li>
-                            <li><a class="dropdown-item" href="#">Wifi Cyton</a></li>
-                        </ul>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-light" href="#">Settings</a>
-                    </li>
-                </ul>
-                <form class="d-flex" role="search">
-                    <h2><span class="badge badge-success bg-success">Connected</span></h2>
-                </form>
-            </div>
-        </div>
-    </nav>
+    <div id="navbar"></div>
+
+    <div class="container">
+        <canvas id="myChart"></canvas>
+    </div>
 </div>
+
+<script>
+
+    let chart = null;
+
+    function main() {
+        setup();
+
+        const data = {
+            labels: [Math.floor(Date.now() % 60000)],
+            datasets: []
+        }
+
+        const colors = [
+            'rgb(255, 0, 0)',
+            'rgb(255, 99, 0)',
+            'rgb(255, 255, 99)',
+            'rgb(99, 255, 0)',
+            'rgb(0, 99, 132)',
+            'rgb(0, 99, 255)',
+            'rgb(255, 99, 132)',
+            'rgb(255, 0, 255)'
+        ]
+
+        getChannels((channels) => {
+            let i = 0;
+            for (const channel of channels) {
+                data.datasets.push({
+                    label: channel.id,
+                    backgroundColor: colors[i],
+                    borderColor: colors[i],
+                    data: [channel.average],
+                });
+                i++;
+            }
+            const config = {
+                type: 'line',
+                data: data,
+                options: {}
+            };
+
+            chart = new Chart(
+                document.getElementById('myChart'),
+                config
+            );
+
+            chart.update('none');
+
+            updateGraph(true);
+        });
+    }
+
+    function updateGraph(repeat) {
+        console.log('update graph')
+        getChannels((channels) => {
+            if (channels) {
+                chart.data.labels.push(Math.floor(Date.now() % 60000));
+
+                for (let i = 0; i < channels.length; i++) {
+                    chart.data.datasets[i].data.push(channels[i].average);
+                }
+
+                if (chart.data.labels.length > 50) {
+                    chart.data.labels.shift()
+                    for (let i = 0; i < channels.length; i++) {
+                        chart.data.datasets[i].data.shift()
+                    }
+                    // console.log(chart.data)
+                    // repeat = false
+                }
+                chart.update("resize")
+                // chart.update("normal")
+            }
+
+            if (repeat) setTimeout(updateGraph, 30, repeat);
+        });
+    }
+
+    $(document).ready(main);
+</script>
 
 <!--<div id="topBar" class="tooltip">-->
 <!--    <span class="tooltiptext">-->
@@ -152,319 +210,320 @@
 </body>
 <script>
 
-    let socket = null;
+//    let socket = null;
+//
+//    let graphLimits = {};
+//    let thresholds = {};
+//    let actions = {};
+//    let actionTypes = {};
+//    let thresholdTypes = {};
+//    let thresholdParameters = {};
+//    let boardType = "Cyton";
+//    let boardName = "OpenBCI-6D58"
+//
+//    let numChannels = null;
+//
+//    let sliderSize = 100;
+//
+//    let indicators = {
+//        connectionStatus: {
+//            status: 0,
+//            options: [0, 1],
+//            colors: ["red", "green"],
+//            messages: ["Network Error", "Network Connected"]
+//        },
+//        deviceConnectionStatus: {
+//            status: 0,
+//            options: [0, 1, 2],
+//            colors: ["red", "yellow", "green"],
+//            messages: ["Cyton Not Connected", "Attempting Cyton Connection...", "Cyton Connected"]
+//        }
+//    }
+//
+//    function main() {
+//        // setup();
+//        // initializeIndicators();
+//        // updateIndicators(true);
+//        // attemptSocketConnect();
+//    }
+//
+//    function attemptSocketConnect() {
+//        socket = new WebSocket("ws://localhost:8080");
+//
+//        socket.onopen = function() {
+//            // alert("[open] Connection established");
+//            indicators.connectionStatus.status = 1;
+//        };
+//
+//        socket.onmessage = function(event) {
+//            const data = JSON.parse(event.data);
+//            // console.log(data);
+//            if (data['indicators'] != null) {
+//                indicators.deviceConnectionStatus.status = data['indicators'].deviceConnectionStatus.status
+//                if (indicators.deviceConnectionStatus.status === 0) {
+//                    $(".channelRow").remove();
+//                    numChannels = null;
+//                }
+//                updateIndicators(false);
+//            }
+//            if (indicators.deviceConnectionStatus.status !== 0 && data['sample'] != null) {
+//                console.log(data);
+//                if (numChannels == null) {
+//                    numChannels = data['sample'].length;
+//                    for (let i = 0; i < numChannels; i++) {
+//                        graphLimits[i] = 0.0001;
+//                        thresholds[i] = 0;
+//                        actions[i] = "a";
+//                        actionTypes[i] = "tap";
+//                        thresholdTypes[i] = "average";
+//                        thresholdParameters[i] = 500;
+//                        buildChannelRow(i);
+//                        $("#channel"+i+" .slider").click(clickSlider);
+//                    }
+//                }
+//                // let s = "<table id=\"sampleTable\">\n" +
+//                //     "    <tr><th>Channel</th><th>Value</th><th>Pressed?</th><th>Threshold</th></tr>\n";
+//                for (let i = 0; i < data['sample'].length; i++) {
+//                    // s += "<tr><td>" + i + "</td><td class='channel_value'>" + data['sample'][i] + "</td><td><div class='indicatorLight' id='indicatorLightChannel"+i+"' style='background-color: "+(data['sample'][i] > parseFloat($("#thresholdChooser").val()) ? "green" : "red")+"'></div></td><td><input type='number' value='" + $("#thresholdChooser").val() + "'></td></tr>"
+//                    $("#channel" + i + " .sliderGraph").css("width", ((data['sample'][i]/graphLimits[i])*sliderSize) + "px");
+//                    $("#channel" + i + " .advancedData .avg").text(thresholdTypes[i] + " of " + thresholdParameters[i] + ": " + data['sample'][i]);
+//                }
+//                // s += "</table>";
+//                // $("#sampleTable").remove();
+//                // $("body").append(s);
+//            }
+//            socket.send(JSON.stringify({
+//                thresholds: thresholds,
+//                actions: actions,
+//                actionTypes: actionTypes,
+//                thresholdTypes: thresholdTypes,
+//                thresholdParameters: thresholdParameters,
+//                boardType: boardType,
+//                boardName: boardName
+//            }));
+//        };
+//
+//        socket.onclose = function(event) {
+//            if (event.wasClean) {
+//                // alert(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+//                //window.location.reload();
+//            } else {
+//                // e.g. server process killed or network down
+//                // event.code is usually 1006 in this case
+//                // console.log('[close] Connection died');
+//                indicators.connectionStatus.status = 0;
+//                setTimeout(attemptSocketConnect, 50);
+//            }
+//        };
+//
+//        socket.onerror = function(error) {
+//            // alert(`[error] ${error.message}`);
+//            // console.log(error);
+//            indicators.connectionStatus.status = 0;
+//            setTimeout(attemptSocketConnect, 50);
+//        };
+//    }
+//
+//    function initializeIndicators() {
+//        for (const key in indicators) {
+//            $("#indicatorPanel").append(`<div class="indicatorDiv" id="`+key+`">
+//                                            <div class="indicatorLight" id="`+key+`Indicator" id=""></div>
+//                                            <div id="`+key+`Message"><p></p></div>
+//                                        </div>`)
+//        }
+//    }
+//
+//    function updateIndicators(repeat) {
+//        for (const key in indicators) {
+//            $("#" + key + "Indicator").css("background-color", indicators[key].colors[indicators[key].status]);
+//            $("#" + key + "Message p").text(indicators[key].messages[indicators[key].status]);
+//        }
+//        if (repeat) setTimeout(updateIndicators, 200, true);
+//    }
+//
+//    function toggle(x) {
+//        if (x === "advanced") {
+//            if ($("#toggle_"+x).is(":checked")) {
+//                $(".advancedData").show();
+//            } else {
+//                $(".advancedData").hide();
+//            }
+//        } else if (x === "allowSim") {
+//            if ($("#toggle_"+x).is(":checked")) {
+//                socket.send(JSON.stringify({'allowSim': true}));
+//            } else {
+//                socket.send(JSON.stringify({'allowSim': false}));
+//            }
+//        } else if (x === "tooltips") {
+//            if ($("#toggle_"+x).is(":checked")) {
+//                $(".tooltiptext").show()
+//            } else {
+//                $(".tooltiptext").hide();
+//            }
+//        }
+//    }
+//
+//    function decreaseGraphSize(x) {
+//        graphLimits[x] = (graphLimits[x] * 0.8).toFixed(8);
+//        $("#channel"+x+" .advancedData .graphLimit").text("Limit: " + graphLimits[x]);
+//    }
+//
+//    function increaseGraphSize(x) {
+//        graphLimits[x] = (graphLimits[x] * 1.2).toFixed(8);
+//        $("#channel"+x+" .advancedData .graphLimit").text("Limit: " + graphLimits[x]);
+//    }
+//
+//    function clickSlider(e) {
+//        const x = (parseInt(e.currentTarget.id.split('slider')[1]));
+//        $("#channel"+x+" .sliderMarker").css('margin-left', (e.offsetX / sliderSize) * sliderSize + "px");
+//        thresholds[x] = ((e.offsetX / sliderSize) * graphLimits[x]).toFixed(8);
+//        $("#channel"+x+" .advancedData .threshold").text("Threshold: " + thresholds[x]);
+//    }
+//
+//    function actionChange(x) {
+//        actions[x] = $("#channel"+x+" .actionSelect").val();
+//    }
+//
+//    function actionTypeChange(x) {
+//        actionTypes[x] = $("#channel"+x+" .actionTypeSelect").val();
+//    }
+//
+//    function thresholdTypeChange(x) {
+//        thresholdTypes[x] = $("#channel"+x+" .thresholdTypeSelect").val();
+//    }
+//
+//    function thresholdParameterChange(x) {
+//        thresholdParameters[x] = $("#channel"+x+" .thresholdParameterSelect").val();
+//    }
+//
+//    function newSliderWidth() {
+//        sliderSize = $("#sliderSizer").val();
+//        $(".slider").css("width", sliderSize + "px");
+//        // $(".sliderGraph").css("width", sliderSize + "px");
+//        $(".sliderGraph").css("max-width", sliderSize + "px");
+//    }
+//
+//    function resetSliderLimits() {
+//        for (const key in Object.keys(graphLimits)) {
+//            graphLimits[key] = parseFloat($("#resetSliderSelect").val());
+//            $("#channel"+key+" .advancedData .graphLimit").text("Limit: " + graphLimits[key]);
+//        }
+//    }
+//
+//    function resetSliderLimit(x) {
+//        graphLimits[x] = parseFloat($("#resetSliderSelect"+x).val());
+//        $("#channel"+x+" .advancedData .graphLimit").text("Limit: " + graphLimits[x]);
+//    }
+//
+//    function disconnect() {
+//        socket.send(JSON.stringify({'disconnect': true}));
+//    }
+//
+//    function reconnect() {
+//        socket.send(JSON.stringify({'reconnect': true}));
+//    }
+//
+//    function terminate() {
+//        socket.send(JSON.stringify({'disconnect': true, 'terminate': true}));
+//        window.close();
+//    }
+//
+//    function newThresholdTypeGlobal() {
+//        $(".thresholdTypeSelect").val($("#thresholdTypeGlobal").val());
+//        for (let i = 0; i < numChannels; i++) thresholdTypeChange(i);
+//    }
+//
+//    function newParameterGlobal() {
+//        $(".thresholdParameterSelect").val($("#thresholdParameterGlobal").val());
+//        for (let i = 0; i < numChannels; i++) thresholdParameterChange(i);
+//    }
+//
+//    function newActionTypeGlobal() {
+//        $(".actionTypeSelect").val($("#actionTypeGlobal").val());
+//        for (let i = 0; i < numChannels; i++) actionTypes[i] = $("#channel"+i+" .actionTypeSelect").val();
+//    }
+//
+//    function changeBoardType() {
+//        boardType = $("#boardTypeSelect").val();
+//
+//        indicators.deviceConnectionStatus.messages =
+//            [boardType + " Not Connected", "Attempting " + boardType + " Connection...", boardType + " Connected"];
+//        this.updateIndicators(false);
+//
+//        if (boardType === "WifiCyton") {
+//            $("#boardTypeSelectName").show();
+//            boardName = $("#boardTypeSelectName").val();
+//        }
+//        else $("#boardTypeSelectName").hide();
+//
+//        socket.send(JSON.stringify({
+//            thresholds: thresholds,
+//            actions: actions,
+//            actionTypes: actionTypes,
+//            thresholdTypes: thresholdTypes,
+//            thresholdParameters: thresholdParameters,
+//            boardType: boardType,
+//            boardName: boardName
+//        }));
+//    }
+//
+//    function buildChannelRow(id) {
+//        let sliderActionOptions = "";
+//        const alphabet = "abcdefghijklmnopqrstuvwxyz123456789";
+//        let keys = ['backspace','delete','tab','enter','escape','up','down','right','left','home','end','pageup','pagedown',
+//        'f1','f2','f3','f4','f5','f6','f7','f8','f9','f10','f11','f12','command','alt','control','shift','right_shift','space','printscreen','insert'];
+//        for (let i = 0; i < alphabet.length; i++) sliderActionOptions += "<option value=\"" + alphabet.substr(i, 1) + "\">" + alphabet.substr(i, 1).toUpperCase() + "</option>\n";
+//        for (let i = 0; i < keys.length; i++) sliderActionOptions += "<option value=\"" + keys[i] + "\">" + keys[i] + "</option>\n";
+//        const selectScale = "<select id=\"resetSliderSelect"+id+"\" onchange=\"resetSliderLimit("+id+")\">\n" +
+//            "            <option value=\"0.00001\">0.00001</option>\n" +
+//            "            <option value=\"0.0001\" selected>0.0001</option>\n" +
+//            "            <option value=\"0.001\">0.001</option>\n" +
+//            "            <option value=\"0.01\">0.01</option>\n" +
+//            "            <option value=\"0.1\">0.1</option>\n" +
+//            "            <option value=\"1\">1</option>\n" +
+//            "            <option value=\"10\">10</option>\n" +
+//            "            <option value=\"100\">100</option>\n" +
+//            "        </select>";
+//        let s = "<tr class=\"channelRow\" id=\"channel"+id+"\"><td><h3>"+id+"</h3></td><td>\n" +
+//            "            <div class=\"sliderDiv\">\n" +
+//            "                <button onclick=\"increaseGraphSize("+id+")\" class='tooltip'>-<span class=\"tooltiptext\">\n" +
+//            "            Decrease size of input bar, use especially if the bar is maxing out/all black" +
+//            "        </span></button>\n" +
+//            "                <div id='slider"+id+"' class=\"slider\">\n" +
+//            "                    <div class=\"sliderGraph\"></div>\n" +
+//            "                    <div class=\"sliderMarker\"></div>\n" +
+//            "                </div>\n" +
+//            "                <button onclick=\"decreaseGraphSize("+id+")\" class='tooltip'>+<span class=\"tooltiptext\">\n" +
+//            "            Increase size of input bar, use especially if the bar is not visible/all white" +
+//            "        </span></button>\n" +
+//            "            </div>\n" +
+//            "            <div class=\"advancedData\">\n" +
+//            "                <p class=\"avg\">Loading...</p><br>\n" +
+//            "                <p class=\"threshold\">Threshold: 0</p><br>\n" +
+//            "                <p class=\"graphLimit\">Limit: 0.0001</p><br>\n" +
+//            "                <p style='margin-right: 0.5em' class='tooltip'>Reset scale: <span class=\"tooltiptext\">\n" +
+//            "            Set the maximum voltage value shown in the graph\n" +
+//            "        </span></p>" + selectScale + "\n" +
+//            "            </div>\n" +
+//            "        </td><td>\n" +
+//            "            <label>\n" +
+//            "                <select class='actionSelect' onchange='actionChange(\""+id+"\")'>\n" +
+//                                sliderActionOptions +
+//            "                </select>\n" +
+//            "            </label>\n" +
+//            "        </td><td><select class='actionTypeSelect' onchange='actionTypeChange(\""+id+"\")'>" +
+//            "                   <option value='tap'>tap</option>" +
+//            "                   <option value='toggle'>toggle</option>" +
+//            "                   <option value='feather'>feather</option>" +
+//            "</select></td><td><select class='thresholdTypeSelect' onchange='thresholdTypeChange(\""+id+"\")'>" +
+//            "                   <option value='average' selected>Average</option>" +
+//            "                   <option value='max'>Max</option>" +
+//            "                   <option value='last'>Last</option>" +
+//            "</select></td><td><input type='number' class='thresholdParameterSelect' value='500' " +
+//            "                       onchange='thresholdParameterChange(\""+id+"\")'></td></tr>";
+//        $("#channelTable").append(s);
+//    }
 
-    let graphLimits = {};
-    let thresholds = {};
-    let actions = {};
-    let actionTypes = {};
-    let thresholdTypes = {};
-    let thresholdParameters = {};
-    let boardType = "Cyton";
-    let boardName = "OpenBCI-6D58"
 
-    let numChannels = null;
-
-    let sliderSize = 100;
-
-    let indicators = {
-        connectionStatus: {
-            status: 0,
-            options: [0, 1],
-            colors: ["red", "green"],
-            messages: ["Network Error", "Network Connected"]
-        },
-        deviceConnectionStatus: {
-            status: 0,
-            options: [0, 1, 2],
-            colors: ["red", "yellow", "green"],
-            messages: ["Cyton Not Connected", "Attempting Cyton Connection...", "Cyton Connected"]
-        }
-    }
-
-    function main() {
-        // initializeIndicators();
-        // updateIndicators(true);
-        // attemptSocketConnect();
-    }
-
-    function attemptSocketConnect() {
-        socket = new WebSocket("ws://localhost:8080");
-
-        socket.onopen = function() {
-            // alert("[open] Connection established");
-            indicators.connectionStatus.status = 1;
-        };
-
-        socket.onmessage = function(event) {
-            const data = JSON.parse(event.data);
-            // console.log(data);
-            if (data['indicators'] != null) {
-                indicators.deviceConnectionStatus.status = data['indicators'].deviceConnectionStatus.status
-                if (indicators.deviceConnectionStatus.status === 0) {
-                    $(".channelRow").remove();
-                    numChannels = null;
-                }
-                updateIndicators(false);
-            }
-            if (indicators.deviceConnectionStatus.status !== 0 && data['sample'] != null) {
-                console.log(data);
-                if (numChannels == null) {
-                    numChannels = data['sample'].length;
-                    for (let i = 0; i < numChannels; i++) {
-                        graphLimits[i] = 0.0001;
-                        thresholds[i] = 0;
-                        actions[i] = "a";
-                        actionTypes[i] = "tap";
-                        thresholdTypes[i] = "average";
-                        thresholdParameters[i] = 500;
-                        buildChannelRow(i);
-                        $("#channel"+i+" .slider").click(clickSlider);
-                    }
-                }
-                // let s = "<table id=\"sampleTable\">\n" +
-                //     "    <tr><th>Channel</th><th>Value</th><th>Pressed?</th><th>Threshold</th></tr>\n";
-                for (let i = 0; i < data['sample'].length; i++) {
-                    // s += "<tr><td>" + i + "</td><td class='channel_value'>" + data['sample'][i] + "</td><td><div class='indicatorLight' id='indicatorLightChannel"+i+"' style='background-color: "+(data['sample'][i] > parseFloat($("#thresholdChooser").val()) ? "green" : "red")+"'></div></td><td><input type='number' value='" + $("#thresholdChooser").val() + "'></td></tr>"
-                    $("#channel" + i + " .sliderGraph").css("width", ((data['sample'][i]/graphLimits[i])*sliderSize) + "px");
-                    $("#channel" + i + " .advancedData .avg").text(thresholdTypes[i] + " of " + thresholdParameters[i] + ": " + data['sample'][i]);
-                }
-                // s += "</table>";
-                // $("#sampleTable").remove();
-                // $("body").append(s);
-            }
-            socket.send(JSON.stringify({
-                thresholds: thresholds,
-                actions: actions,
-                actionTypes: actionTypes,
-                thresholdTypes: thresholdTypes,
-                thresholdParameters: thresholdParameters,
-                boardType: boardType,
-                boardName: boardName
-            }));
-        };
-
-        socket.onclose = function(event) {
-            if (event.wasClean) {
-                // alert(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
-                //window.location.reload();
-            } else {
-                // e.g. server process killed or network down
-                // event.code is usually 1006 in this case
-                // console.log('[close] Connection died');
-                indicators.connectionStatus.status = 0;
-                setTimeout(attemptSocketConnect, 50);
-            }
-        };
-
-        socket.onerror = function(error) {
-            // alert(`[error] ${error.message}`);
-            // console.log(error);
-            indicators.connectionStatus.status = 0;
-            setTimeout(attemptSocketConnect, 50);
-        };
-    }
-
-    function initializeIndicators() {
-        for (const key in indicators) {
-            $("#indicatorPanel").append(`<div class="indicatorDiv" id="`+key+`">
-                                            <div class="indicatorLight" id="`+key+`Indicator" id=""></div>
-                                            <div id="`+key+`Message"><p></p></div>
-                                        </div>`)
-        }
-    }
-
-    function updateIndicators(repeat) {
-        for (const key in indicators) {
-            $("#" + key + "Indicator").css("background-color", indicators[key].colors[indicators[key].status]);
-            $("#" + key + "Message p").text(indicators[key].messages[indicators[key].status]);
-        }
-        if (repeat) setTimeout(updateIndicators, 200, true);
-    }
-
-    function toggle(x) {
-        if (x === "advanced") {
-            if ($("#toggle_"+x).is(":checked")) {
-                $(".advancedData").show();
-            } else {
-                $(".advancedData").hide();
-            }
-        } else if (x === "allowSim") {
-            if ($("#toggle_"+x).is(":checked")) {
-                socket.send(JSON.stringify({'allowSim': true}));
-            } else {
-                socket.send(JSON.stringify({'allowSim': false}));
-            }
-        } else if (x === "tooltips") {
-            if ($("#toggle_"+x).is(":checked")) {
-                $(".tooltiptext").show()
-            } else {
-                $(".tooltiptext").hide();
-            }
-        }
-    }
-
-    function decreaseGraphSize(x) {
-        graphLimits[x] = (graphLimits[x] * 0.8).toFixed(8);
-        $("#channel"+x+" .advancedData .graphLimit").text("Limit: " + graphLimits[x]);
-    }
-
-    function increaseGraphSize(x) {
-        graphLimits[x] = (graphLimits[x] * 1.2).toFixed(8);
-        $("#channel"+x+" .advancedData .graphLimit").text("Limit: " + graphLimits[x]);
-    }
-
-    function clickSlider(e) {
-        const x = (parseInt(e.currentTarget.id.split('slider')[1]));
-        $("#channel"+x+" .sliderMarker").css('margin-left', (e.offsetX / sliderSize) * sliderSize + "px");
-        thresholds[x] = ((e.offsetX / sliderSize) * graphLimits[x]).toFixed(8);
-        $("#channel"+x+" .advancedData .threshold").text("Threshold: " + thresholds[x]);
-    }
-
-    function actionChange(x) {
-        actions[x] = $("#channel"+x+" .actionSelect").val();
-    }
-
-    function actionTypeChange(x) {
-        actionTypes[x] = $("#channel"+x+" .actionTypeSelect").val();
-    }
-
-    function thresholdTypeChange(x) {
-        thresholdTypes[x] = $("#channel"+x+" .thresholdTypeSelect").val();
-    }
-
-    function thresholdParameterChange(x) {
-        thresholdParameters[x] = $("#channel"+x+" .thresholdParameterSelect").val();
-    }
-
-    function newSliderWidth() {
-        sliderSize = $("#sliderSizer").val();
-        $(".slider").css("width", sliderSize + "px");
-        // $(".sliderGraph").css("width", sliderSize + "px");
-        $(".sliderGraph").css("max-width", sliderSize + "px");
-    }
-
-    function resetSliderLimits() {
-        for (const key in Object.keys(graphLimits)) {
-            graphLimits[key] = parseFloat($("#resetSliderSelect").val());
-            $("#channel"+key+" .advancedData .graphLimit").text("Limit: " + graphLimits[key]);
-        }
-    }
-
-    function resetSliderLimit(x) {
-        graphLimits[x] = parseFloat($("#resetSliderSelect"+x).val());
-        $("#channel"+x+" .advancedData .graphLimit").text("Limit: " + graphLimits[x]);
-    }
-
-    function disconnect() {
-        socket.send(JSON.stringify({'disconnect': true}));
-    }
-
-    function reconnect() {
-        socket.send(JSON.stringify({'reconnect': true}));
-    }
-
-    function terminate() {
-        socket.send(JSON.stringify({'disconnect': true, 'terminate': true}));
-        window.close();
-    }
-
-    function newThresholdTypeGlobal() {
-        $(".thresholdTypeSelect").val($("#thresholdTypeGlobal").val());
-        for (let i = 0; i < numChannels; i++) thresholdTypeChange(i);
-    }
-
-    function newParameterGlobal() {
-        $(".thresholdParameterSelect").val($("#thresholdParameterGlobal").val());
-        for (let i = 0; i < numChannels; i++) thresholdParameterChange(i);
-    }
-
-    function newActionTypeGlobal() {
-        $(".actionTypeSelect").val($("#actionTypeGlobal").val());
-        for (let i = 0; i < numChannels; i++) actionTypes[i] = $("#channel"+i+" .actionTypeSelect").val();
-    }
-
-    function changeBoardType() {
-        boardType = $("#boardTypeSelect").val();
-
-        indicators.deviceConnectionStatus.messages =
-            [boardType + " Not Connected", "Attempting " + boardType + " Connection...", boardType + " Connected"];
-        this.updateIndicators(false);
-
-        if (boardType === "WifiCyton") {
-            $("#boardTypeSelectName").show();
-            boardName = $("#boardTypeSelectName").val();
-        }
-        else $("#boardTypeSelectName").hide();
-
-        socket.send(JSON.stringify({
-            thresholds: thresholds,
-            actions: actions,
-            actionTypes: actionTypes,
-            thresholdTypes: thresholdTypes,
-            thresholdParameters: thresholdParameters,
-            boardType: boardType,
-            boardName: boardName
-        }));
-    }
-
-    function buildChannelRow(id) {
-        let sliderActionOptions = "";
-        const alphabet = "abcdefghijklmnopqrstuvwxyz123456789";
-        let keys = ['backspace','delete','tab','enter','escape','up','down','right','left','home','end','pageup','pagedown',
-        'f1','f2','f3','f4','f5','f6','f7','f8','f9','f10','f11','f12','command','alt','control','shift','right_shift','space','printscreen','insert'];
-        for (let i = 0; i < alphabet.length; i++) sliderActionOptions += "<option value=\"" + alphabet.substr(i, 1) + "\">" + alphabet.substr(i, 1).toUpperCase() + "</option>\n";
-        for (let i = 0; i < keys.length; i++) sliderActionOptions += "<option value=\"" + keys[i] + "\">" + keys[i] + "</option>\n";
-        const selectScale = "<select id=\"resetSliderSelect"+id+"\" onchange=\"resetSliderLimit("+id+")\">\n" +
-            "            <option value=\"0.00001\">0.00001</option>\n" +
-            "            <option value=\"0.0001\" selected>0.0001</option>\n" +
-            "            <option value=\"0.001\">0.001</option>\n" +
-            "            <option value=\"0.01\">0.01</option>\n" +
-            "            <option value=\"0.1\">0.1</option>\n" +
-            "            <option value=\"1\">1</option>\n" +
-            "            <option value=\"10\">10</option>\n" +
-            "            <option value=\"100\">100</option>\n" +
-            "        </select>";
-        let s = "<tr class=\"channelRow\" id=\"channel"+id+"\"><td><h3>"+id+"</h3></td><td>\n" +
-            "            <div class=\"sliderDiv\">\n" +
-            "                <button onclick=\"increaseGraphSize("+id+")\" class='tooltip'>-<span class=\"tooltiptext\">\n" +
-            "            Decrease size of input bar, use especially if the bar is maxing out/all black" +
-            "        </span></button>\n" +
-            "                <div id='slider"+id+"' class=\"slider\">\n" +
-            "                    <div class=\"sliderGraph\"></div>\n" +
-            "                    <div class=\"sliderMarker\"></div>\n" +
-            "                </div>\n" +
-            "                <button onclick=\"decreaseGraphSize("+id+")\" class='tooltip'>+<span class=\"tooltiptext\">\n" +
-            "            Increase size of input bar, use especially if the bar is not visible/all white" +
-            "        </span></button>\n" +
-            "            </div>\n" +
-            "            <div class=\"advancedData\">\n" +
-            "                <p class=\"avg\">Loading...</p><br>\n" +
-            "                <p class=\"threshold\">Threshold: 0</p><br>\n" +
-            "                <p class=\"graphLimit\">Limit: 0.0001</p><br>\n" +
-            "                <p style='margin-right: 0.5em' class='tooltip'>Reset scale: <span class=\"tooltiptext\">\n" +
-            "            Set the maximum voltage value shown in the graph\n" +
-            "        </span></p>" + selectScale + "\n" +
-            "            </div>\n" +
-            "        </td><td>\n" +
-            "            <label>\n" +
-            "                <select class='actionSelect' onchange='actionChange(\""+id+"\")'>\n" +
-                                sliderActionOptions +
-            "                </select>\n" +
-            "            </label>\n" +
-            "        </td><td><select class='actionTypeSelect' onchange='actionTypeChange(\""+id+"\")'>" +
-            "                   <option value='tap'>tap</option>" +
-            "                   <option value='toggle'>toggle</option>" +
-            "                   <option value='feather'>feather</option>" +
-            "</select></td><td><select class='thresholdTypeSelect' onchange='thresholdTypeChange(\""+id+"\")'>" +
-            "                   <option value='average' selected>Average</option>" +
-            "                   <option value='max'>Max</option>" +
-            "                   <option value='last'>Last</option>" +
-            "</select></td><td><input type='number' class='thresholdParameterSelect' value='500' " +
-            "                       onchange='thresholdParameterChange(\""+id+"\")'></td></tr>";
-        $("#channelTable").append(s);
-    }
-
-    $(document).ready(main)
 </script>
 </html>

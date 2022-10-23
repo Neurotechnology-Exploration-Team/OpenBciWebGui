@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Open BCI Web GUI</title>
+
+    <script src="/jquery-1.9.1.min.js"></script>
+
+    <link href="/bootstrap.min.css" rel="stylesheet">
+    <script src="/bootstrap.bundle.min.js"></script>
+
+    <link href="/index.css" rel="stylesheet">
+    <script src="/global.js"></script>
+</head>
+<body class="bg-dark text-light">
+
+<div class="container text-center">
+    <div id="navbar"></div>
+
+    <div class="container">
+        <div class="row mb-sm-2">
+            <div class="col"><p>Advanced</p></div>
+            <div class="col">
+                <div class="btn-group">
+                    <input type="radio" class="btn-check" name="adv" id="adv-off" autocomplete="off" checked>
+                    <label class="btn btn-outline-primary" for="adv-off">Off</label>
+
+                    <input type="radio" class="btn-check" name="adv" id="adv-on" autocomplete="off">
+                    <label class="btn btn-outline-primary" for="adv-on">On</label>
+                </div>
+            </div>
+        </div>
+        <div class="row mb-sm-2">
+            <div class="col"><p>Tooltips</p></div>
+            <div class="col">
+                <div class="btn-group">
+                    <input type="radio" class="btn-check" name="tt" id="tt-off" autocomplete="off" checked>
+                    <label class="btn btn-outline-primary" for="tt-off">Off</label>
+
+                    <input type="radio" class="btn-check" name="tt" id="tt-on" autocomplete="off">
+                    <label class="btn btn-outline-primary" for="tt-on">On</label>
+                </div>
+            </div>
+        </div>
+        <div class="row mb-sm-2">
+            <div class="col"><p>Wifi Shield Name</p></div>
+            <div class="col">
+                <input type="text" class="form-control text-center" name="wifi-shield-name" value="OpenBCI-6D58" size="12">
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
+<script>
+    function main() {
+        setup();
+    }
+
+    $(document).ready(main);
+</script>

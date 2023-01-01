@@ -2,6 +2,8 @@
 
 ### by Michael Elia
 
+# This repository is deprecated. It depends on packages from OpenBCI that only work with nodejs v9, which causes significant security vulnerabilities. Use at your own risk.
+
 ## Requirements
 
 - The program must be run on a Windows computer. Linux and Mac are untested. Safari will not work because it does not allow unsecure websockets.
